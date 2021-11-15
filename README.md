@@ -3,7 +3,7 @@ Basically V3.1 but who cares lol
 
 ### Loadstring
 ```lua
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexR32/BracketRewrite/main/Library.lua"))()
+local Library = loadstring(Game:HttpGet("https://raw.githubusercontent.com/AlexR32/BracketRewrite/main/Library.lua"))()
 -- or
 local Library = loadstring(Game:GetObjects("rbxassetid://7974127463")[1].Source)()
 ```
