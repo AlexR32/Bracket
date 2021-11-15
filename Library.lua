@@ -15,7 +15,7 @@ local Get = {
 	Toggle = GetModule("Toggle"),
 	Slider = GetModule("Slider"),
 	Textbox = GetModule("Textbox"),
-	Keybind = GetModule(".Keybind"),
+	Keybind = GetModule("Keybind"),
 	Dropdown = GetModule("Dropdown"),
 	Colorpicker = GetModule("Colorpicker"),
 
