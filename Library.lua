@@ -1,7 +1,7 @@
 local MainModule = Game:GetObjects("rbxassetid://7974127463")[1]
 
 local function GetModule(Module)
-    return loadstring(MainModule[Module].Source)()
+	return loadstring(MainModule[Module].Source)()
 end
 
 local Get = {
@@ -9,7 +9,7 @@ local Get = {
 	Window = GetModule("Window"),
 	Tab = GetModule("Tab"),
 	Section = GetModule("Section"),
-	--[[
+
 	Label = GetModule("Label"),
 	Button = GetModule("Button"),
 	Toggle = GetModule("Toggle"),
@@ -18,11 +18,12 @@ local Get = {
 	Keybind = GetModule(".Keybind"),
 	Dropdown = GetModule("Dropdown"),
 	Colorpicker = GetModule("Colorpicker"),
-	]]
+
 	Element = function(Module,Element)
 		return MainModule[Module][Element]
 	end
 }
+
 
 return function(Window)
 	Window = Get.Utilities:CheckType(Window, "table") or {}
@@ -40,7 +41,7 @@ return function(Window)
 			Label = Get.Utilities:CheckType(Label, "table") or {}
 			Label.Text = Get.Utilities:CheckType(Label.Text, "string") or "Label"
 			Label.Side = Get.Utilities:CheckType(Label.Side, "string") or nil
-			
+
 			local LocalLabel = Get.Label(Get.Utilities:ChooseTabSide(Label.Side,LocalTab),Get,Label)
 			return Label
 		end
@@ -93,7 +94,7 @@ return function(Window)
 			Dropdown = Get.Utilities:CheckType(Dropdown, "table") or {}
 			Dropdown.Name = Get.Utilities:CheckType(Dropdown.Name, "string") or "Dropdown"
 			Dropdown.Side = Get.Utilities:CheckType(Dropdown.Side, "string") or nil
-			
+
 			Dropdown.Callback = Get.Utilities:CheckType(Dropdown.Callback, "function") or print
 			local LocalDropdown = Get.Dropdown(Get.Utilities:ChooseTabSide(Dropdown.Side,LocalTab),LocalWindow,Window,Get,Dropdown)
 			return Dropdown
@@ -102,18 +103,18 @@ return function(Window)
 			Section = Get.Utilities:CheckType(Section, "table") or {}
 			Section.Name = Get.Utilities:CheckType(Section.Name, "string") or "Section"
 			Section.Side = Get.Utilities:CheckType(Section.Side, "string") or nil
-			
+
 			local LocalSection = Get.Section(Get.Utilities:ChooseTabSide(Section.Side,LocalTab),Get,Section)
 			function Section:AddLabel(Label)
 				Label = Get.Utilities:CheckType(Label, "table") or {}
-                Label.Text = Get.Utilities:CheckType(Label.Text, "string") or "Label"
+				Label.Text = Get.Utilities:CheckType(Label.Text, "string") or "Label"
 
 				local LocalLabel = Get.Label(LocalSection.Container,Get,Label)
 				return Label
 			end
 			function Section:AddButton(Button)
 				Button = Get.Utilities:CheckType(Button, "table") or {}
-			    Button.Name = Get.Utilities:CheckType(Button.Name, "string") or "Button"
+				Button.Name = Get.Utilities:CheckType(Button.Name, "string") or "Button"
 
 				Button.Callback = Get.Utilities:CheckType(Button.Callback, "function") or function() print("Hello World!") end
 				local LocalButton = Get.Button(LocalSection.Container,Window,Get,Button)
@@ -155,7 +156,7 @@ return function(Window)
 			function Section:AddDropdown(Dropdown)
 				Dropdown = Get.Utilities:CheckType(Dropdown, "table") or {}
 				Dropdown.Name = Get.Utilities:CheckType(Dropdown.Name, "string") or "Dropdown"
-				
+
 				Dropdown.Callback = Get.Utilities:CheckType(Dropdown.Callback, "function") or print
 				local LocalDropdown = Get.Dropdown(LocalSection.Container,LocalWindow,Window,Get,Dropdown)
 				return Dropdown
