@@ -154,6 +154,18 @@ return function(Window)
 				local LocalSlider = Get.Slider(LocalSection.Container,Window,Get,Slider)
 				return Slider
 			end
+			function Section:AddTextbox(Textbox)
+				Textbox = Get.Utilities:CheckType(Textbox, "table") or {}
+				Textbox.Name = Get.Utilities:CheckType(Textbox.Name, "string") or "Textbox"
+				Textbox.Side = Get.Utilities:CheckType(Textbox.Side, "string") or nil
+
+				Textbox.Text = Get.Utilities:CheckType(Textbox.Text, "string") or "Sample Text"
+				Textbox.Placeholder = Get.Utilities:CheckType(Textbox.Placeholder, "string") or "Textbox"
+				Textbox.NumbersOnly = Get.Utilities:CheckType(Textbox.NumbersOnly, "boolean") or false
+				Textbox.Callback = Get.Utilities:CheckType(Textbox.Callback, "function") or print
+				local LocalSlider = Get.Textbox(LocalSection.Container,Window,Get,Textbox)
+				return Textbox
+			end
 			function Section:AddBind(Bind)
 				Bind = Get.Utilities:CheckType(Bind, "table") or {}
 				Bind.Name = Get.Utilities:CheckType(Bind.Name, "string") or "Keybind"
