@@ -78,6 +78,18 @@ return function(Window)
 			local LocalSlider = Get.Slider(Get.Utilities:ChooseTabSide(Slider.Side,LocalTab),Window,Get,Slider)
 			return Slider
 		end
+		function Tab:AddTextbox(Textbox)
+			Textbox = Get.Utilities:CheckType(Textbox, "table") or {}
+			Textbox.Name = Get.Utilities:CheckType(Textbox.Name, "string") or "Textbox"
+			Textbox.Side = Get.Utilities:CheckType(Textbox.Side, "string") or nil
+
+			Textbox.Text = Get.Utilities:CheckType(Textbox.Text, "string") or "Sample Text"
+			Textbox.Placeholder = Get.Utilities:CheckType(Textbox.Placeholder, "string") or "Textbox"
+			Textbox.NumbersOnly = Get.Utilities:CheckType(Textbox.NumbersOnly, "boolean") or false
+			Textbox.Callback = Get.Utilities:CheckType(Textbox.Callback, "function") or print
+			local LocalSlider = Get.Textbox(Get.Utilities:ChooseTabSide(Textbox.Side,LocalTab),Window,Get,Textbox)
+			return Textbox
+		end
 		function Tab:AddBind(Bind)
 			Bind = Get.Utilities:CheckType(Bind, "table") or {}
 			Bind.Name = Get.Utilities:CheckType(Bind.Name, "string") or "Keybind"
