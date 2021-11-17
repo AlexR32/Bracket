@@ -24,7 +24,6 @@ local Get = {
 	end
 }
 
-
 return function(Window)
 	Window = Get.Utilities:CheckType(Window, "table") or {}
 	Window.Name = Get.Utilities:CheckType(Window.Name, "string") or "Window"
@@ -111,6 +110,15 @@ return function(Window)
 			local LocalDropdown = Get.Dropdown(Get.Utilities:ChooseTabSide(Dropdown.Side,LocalTab),LocalWindow,Window,Get,Dropdown)
 			return Dropdown
 		end
+		function Tab:AddColorpicker(Colorpicker)
+			Colorpicker = Get.Utilities:CheckType(Colorpicker, "table") or {}
+			Colorpicker.Name = Get.Utilities:CheckType(Colorpicker.Name, "string") or "Colorpicker"
+			Colorpicker.Side = Get.Utilities:CheckType(Colorpicker.Side, "string") or nil
+			
+			Colorpicker.Callback = Get.Utilities:CheckType(Colorpicker.Callback, "function") or print
+			local LocalColorpicker = Get.Colorpicker(Get.Utilities:ChooseTabSide(Colorpicker.Side,LocalTab),LocalWindow,Window,Get,Colorpicker)
+			return Colorpicker
+		end
 		function Tab:AddSection(Section)
 			Section = Get.Utilities:CheckType(Section, "table") or {}
 			Section.Name = Get.Utilities:CheckType(Section.Name, "string") or "Section"
@@ -184,6 +192,14 @@ return function(Window)
 				Dropdown.Callback = Get.Utilities:CheckType(Dropdown.Callback, "function") or print
 				local LocalDropdown = Get.Dropdown(LocalSection.Container,LocalWindow,Window,Get,Dropdown)
 				return Dropdown
+			end
+			function Section:AddColorpicker(Colorpicker)
+				Colorpicker = Get.Utilities:CheckType(Colorpicker, "table") or {}
+				Colorpicker.Name = Get.Utilities:CheckType(Colorpicker.Name, "string") or "Colorpicker"
+
+				Colorpicker.Callback = Get.Utilities:CheckType(Colorpicker.Callback, "function") or print
+				local LocalColorpicker = Get.Colorpicker(LocalSection.Container,LocalWindow,Window,Get,Colorpicker)
+				return Colorpicker
 			end
 			return Section
 		end
