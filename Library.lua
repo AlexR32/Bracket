@@ -115,6 +115,7 @@ return function(Window)
 			Colorpicker.Name = Get.Utilities:CheckType(Colorpicker.Name, "string") or "Colorpicker"
 			Colorpicker.Side = Get.Utilities:CheckType(Colorpicker.Side, "string") or nil
 			
+			Colorpicker.Color = Get.Utilities:CheckType(Colorpicker.Color, "Color3") or Color3.new(1,0,0)
 			Colorpicker.Callback = Get.Utilities:CheckType(Colorpicker.Callback, "function") or print
 			local LocalColorpicker = Get.Colorpicker(Get.Utilities:ChooseTabSide(Colorpicker.Side,LocalTab),LocalWindow,Window,Get,Colorpicker)
 			return Colorpicker
@@ -196,7 +197,8 @@ return function(Window)
 			function Section:AddColorpicker(Colorpicker)
 				Colorpicker = Get.Utilities:CheckType(Colorpicker, "table") or {}
 				Colorpicker.Name = Get.Utilities:CheckType(Colorpicker.Name, "string") or "Colorpicker"
-
+				
+				Colorpicker.Color = Get.Utilities:CheckType(Colorpicker.Color, "Color3") or Color3.new(1,0,0)
 				Colorpicker.Callback = Get.Utilities:CheckType(Colorpicker.Callback, "function") or print
 				local LocalColorpicker = Get.Colorpicker(LocalSection.Container,LocalWindow,Window,Get,Colorpicker)
 				return Colorpicker
