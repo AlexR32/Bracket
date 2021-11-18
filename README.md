@@ -12,26 +12,26 @@ local Library = loadstring(Game:GetObjects("rbxassetid://7974127463")[1].Source)
 ```lua
 local Library = loadstring(Game:GetObjects("rbxassetid://7974127463")[1].Source)()
 local Window = Library() do
-    local Tab = Window:AddTab() do
-        Tab:AddLabel({Side = "Left"})
+	local Tab = Window:AddTab() do
+		Tab:AddLabel({Side = "Left"})
 		Tab:AddButton({Side = "Left"})
 		Tab:AddToggle({Side = "Left"}):AddBind()
 		Tab:AddSlider({Side = "Left"})
 		Tab:AddTextbox({Side = "Left"})
 		Tab:AddBind({Side = "Left"})
 		Tab:AddDropdown({Side = "Left", Name = "Workspace", Default = game.Players.LocalPlayer.Name, List = workspace:GetChildren()})
-        local Section = Tab:AddSection({Side = "Right"}) do
-            Section:AddLabel()
+		Tab:AddColorpicker({Side = "Left"})
+		local Section = Tab:AddSection({Side = "Right"}) do
+			Section:AddLabel()
 			Section:AddButton()
 			Section:AddToggle({Name = "UI Toggle",Value = true,Callback = function(Bool) 
 				Window:Toggle(Bool)
 			end}):AddBind({Key = "RightShift"})
 			Section:AddSlider()
-			Section:AddTextbox()
 			Section:AddBind()
-			Section:AddDropdown({Name = "Playerlist", List = game.Players:GetPlayers()})
-        end
-    end
+			Section:AddDropdown({Name = "Playerlist", Default = game.Players.LocalPlayer.Name, List = game.Players:GetPlayers()})
+		end
+	end
 end
 
 ```
