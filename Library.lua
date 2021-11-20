@@ -28,6 +28,8 @@ return function(Window)
 	Window = Get.Utilities:CheckType(Window, "table") or {}
 	Window.Name = Get.Utilities:CheckType(Window.Name, "string") or "Window"
 	Window.Color = Get.Utilities:CheckType(Window.Color, "Color3") or Color3.new(1,0.5,0.25)
+	Window.Size = Get.Utilities:CheckType(Window.Size, "Udim2") or UDim2.new(0,296,0,296)
+	Window.Position = Get.Utilities:CheckType(Window.Position, "Udim2") or UDim2.new(0.5,-248,0.5,-248)
 	if Window.Enabled == nil then Window.Enabled = true end
 	Window.Colorable = {}
 
