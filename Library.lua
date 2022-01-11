@@ -9,7 +9,8 @@ local Get = {
 	Window = GetModule("Window"),
 	Tab = GetModule("Tab"),
 	Section = GetModule("Section"),
-
+	
+	Divider = GetModule("Divider"),
 	Label = GetModule("Label"),
 	Button = GetModule("Button"),
 	Toggle = GetModule("Toggle"),
@@ -28,9 +29,11 @@ return function(Window)
 	Window = Get.Utilities:CheckType(Window, "table") or {}
 	Window.Name = Get.Utilities:CheckType(Window.Name, "string") or "Window"
 	Window.Color = Get.Utilities:CheckType(Window.Color, "Color3") or Color3.new(1,0.5,0.25)
-	Window.Size = Get.Utilities:CheckType(Window.Size, "UDim2") or UDim2.new(0,296,0,296)
-	Window.Position = Get.Utilities:CheckType(Window.Position, "UDim2") or UDim2.new(0.5,-148,0.5,-148)
+	Window.Size = Get.Utilities:CheckType(Window.Size, "UDim2") or UDim2.new(0,496,0,496)
+	Window.Position = Get.Utilities:CheckType(Window.Position, "UDim2") or UDim2.new(0.5,-248,0.5,-248)
+
 	if Window.Enabled == nil then Window.Enabled = true end
+	Window.RainbowHue = 0
 	Window.Colorable = {}
 
 	local LocalWindow = Get.Window(Get,Window)
@@ -38,6 +41,15 @@ return function(Window)
 		Tab = Get.Utilities:CheckType(Tab, "table") or {}
 		Tab.Name = Get.Utilities:CheckType(Tab.Name, "string") or "Tab"
 		local LocalTab = Get.Tab(LocalWindow, Window, Get, Tab)
+		
+		function Tab:AddDivider(Divider)
+			Divider = Get.Utilities:CheckType(Divider, "table") or {}
+			Divider.Text = Get.Utilities:CheckType(Divider.Text, "string") or nil
+			Divider.Side = Get.Utilities:CheckType(Divider.Side, "string") or nil
+
+			local LocalDivider = Get.Divider(Get.Utilities:ChooseTabSide(Divider.Side,LocalTab),Get,Divider)
+			return Divider
+		end
 		function Tab:AddLabel(Label)
 			Label = Get.Utilities:CheckType(Label, "table") or {}
 			Label.Text = Get.Utilities:CheckType(Label.Text, "string") or "Label"
@@ -52,7 +64,7 @@ return function(Window)
 			Button.Side = Get.Utilities:CheckType(Button.Side, "string") or nil
 
 			Button.Callback = Get.Utilities:CheckType(Button.Callback, "function") or function() print("Hello World!") end
-			local LocalButton = Get.Button(Get.Utilities:ChooseTabSide(Button.Side,LocalTab),Window,Get,Button)
+			local LocalButton = Get.Button(Get.Utilities:ChooseTabSide(Button.Side,LocalTab),LocalWindow,Window,Get,Button)
 			return Button
 		end
 		function Tab:AddToggle(Toggle)
@@ -62,7 +74,7 @@ return function(Window)
 
 			Toggle.Value = Get.Utilities:CheckType(Toggle.Value, "boolean") or false
 			Toggle.Callback = Get.Utilities:CheckType(Toggle.Callback, "function") or print
-			local LocalToggle = Get.Toggle(Get.Utilities:ChooseTabSide(Toggle.Side,LocalTab),Window,Get,Toggle)
+			local LocalToggle = Get.Toggle(Get.Utilities:ChooseTabSide(Toggle.Side,LocalTab),LocalWindow,Window,Get,Toggle)
 			return Toggle
 		end
 		function Tab:AddSlider(Slider)
@@ -76,7 +88,7 @@ return function(Window)
 			Slider.Unit = Get.Utilities:CheckType(Slider.Unit, "string") or ""
 			Slider.Value = Get.Utilities:CheckType(Slider.Value, "number") or (Slider.Max / 2)
 			Slider.Callback = Get.Utilities:CheckType(Slider.Callback, "function") or print
-			local LocalSlider = Get.Slider(Get.Utilities:ChooseTabSide(Slider.Side,LocalTab),Window,Get,Slider)
+			local LocalSlider = Get.Slider(Get.Utilities:ChooseTabSide(Slider.Side,LocalTab),LocalWindow,Window,Get,Slider)
 			return Slider
 		end
 		function Tab:AddTextbox(Textbox)
@@ -84,11 +96,11 @@ return function(Window)
 			Textbox.Name = Get.Utilities:CheckType(Textbox.Name, "string") or "Textbox"
 			Textbox.Side = Get.Utilities:CheckType(Textbox.Side, "string") or nil
 
-			Textbox.Text = Get.Utilities:CheckType(Textbox.Text, "string") or "Sample Text"
+			Textbox.Text = Get.Utilities:CheckType(Textbox.Text, "string") or ""
 			Textbox.Placeholder = Get.Utilities:CheckType(Textbox.Placeholder, "string") or "Textbox"
 			Textbox.NumbersOnly = Get.Utilities:CheckType(Textbox.NumbersOnly, "boolean") or false
 			Textbox.Callback = Get.Utilities:CheckType(Textbox.Callback, "function") or print
-			local LocalSlider = Get.Textbox(Get.Utilities:ChooseTabSide(Textbox.Side,LocalTab),Window,Get,Textbox)
+			local LocalSlider = Get.Textbox(Get.Utilities:ChooseTabSide(Textbox.Side,LocalTab),LocalWindow,Window,Get,Textbox)
 			return Textbox
 		end
 		function Tab:AddBind(Bind)
@@ -100,7 +112,7 @@ return function(Window)
 			Bind.Mouse = Get.Utilities:CheckType(Bind.Mouse, "boolean") or false
 			Bind.Callback = Get.Utilities:CheckType(Bind.Callback, "function") or print
 			Bind.Blacklist = Get.Utilities:CheckType(Bind.Blacklist, "table") or {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}
-			local LocalBind = Get.Keybind(Get.Utilities:ChooseTabSide(Bind.Side,LocalTab),Window,Get,Bind)
+			local LocalBind = Get.Keybind(Get.Utilities:ChooseTabSide(Bind.Side,LocalTab),LocalWindow,Window,Get,Bind)
 			return Bind
 		end
 		function Tab:AddDropdown(Dropdown)
@@ -126,8 +138,15 @@ return function(Window)
 			Section = Get.Utilities:CheckType(Section, "table") or {}
 			Section.Name = Get.Utilities:CheckType(Section.Name, "string") or "Section"
 			Section.Side = Get.Utilities:CheckType(Section.Side, "string") or nil
-
 			local LocalSection = Get.Section(Get.Utilities:ChooseTabSide(Section.Side,LocalTab),Get,Section)
+			
+			function Section:AddDivider(Divider)
+				Divider = Get.Utilities:CheckType(Divider, "table") or {}
+				Divider.Text = Get.Utilities:CheckType(Divider.Text, "string") or nil
+				
+				local LocalDivider = Get.Divider(LocalSection.Container,Get,Divider)
+				return Divider
+			end
 			function Section:AddLabel(Label)
 				Label = Get.Utilities:CheckType(Label, "table") or {}
 				Label.Text = Get.Utilities:CheckType(Label.Text, "string") or "Label"
@@ -140,7 +159,7 @@ return function(Window)
 				Button.Name = Get.Utilities:CheckType(Button.Name, "string") or "Button"
 
 				Button.Callback = Get.Utilities:CheckType(Button.Callback, "function") or function() print("Hello World!") end
-				local LocalButton = Get.Button(LocalSection.Container,Window,Get,Button)
+				local LocalButton = Get.Button(LocalSection.Container,LocalWindow,Window,Get,Button)
 				return Button
 			end
 			function Section:AddToggle(Toggle)
@@ -149,7 +168,7 @@ return function(Window)
 
 				Toggle.Value = Get.Utilities:CheckType(Toggle.Value, "boolean") or false
 				Toggle.Callback = Get.Utilities:CheckType(Toggle.Callback, "function") or print
-				local LocalToggle = Get.Toggle(LocalSection.Container,Window,Get,Toggle)
+				local LocalToggle = Get.Toggle(LocalSection.Container,LocalWindow,Window,Get,Toggle)
 				return Toggle
 			end
 			function Section:AddSlider(Slider)
@@ -162,7 +181,7 @@ return function(Window)
 				Slider.Unit = Get.Utilities:CheckType(Slider.Unit, "string") or ""
 				Slider.Value = Get.Utilities:CheckType(Slider.Value, "number") or (Slider.Max / 2)
 				Slider.Callback = Get.Utilities:CheckType(Slider.Callback, "function") or print
-				local LocalSlider = Get.Slider(LocalSection.Container,Window,Get,Slider)
+				local LocalSlider = Get.Slider(LocalSection.Container,LocalWindow,Window,Get,Slider)
 				return Slider
 			end
 			function Section:AddTextbox(Textbox)
@@ -174,7 +193,7 @@ return function(Window)
 				Textbox.Placeholder = Get.Utilities:CheckType(Textbox.Placeholder, "string") or "Textbox"
 				Textbox.NumbersOnly = Get.Utilities:CheckType(Textbox.NumbersOnly, "boolean") or false
 				Textbox.Callback = Get.Utilities:CheckType(Textbox.Callback, "function") or print
-				local LocalSlider = Get.Textbox(LocalSection.Container,Window,Get,Textbox)
+				local LocalSlider = Get.Textbox(LocalSection.Container,LocalWindow,Window,Get,Textbox)
 				return Textbox
 			end
 			function Section:AddBind(Bind)
@@ -185,7 +204,7 @@ return function(Window)
 				Bind.Mouse = Get.Utilities:CheckType(Bind.Mouse, "boolean") or false
 				Bind.Callback = Get.Utilities:CheckType(Bind.Callback, "function") or print
 				Bind.Blacklist = Get.Utilities:CheckType(Bind.Blacklist, "table") or {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}
-				local LocalBind = Get.Keybind(LocalSection.Container,Window,Get,Bind)
+				local LocalBind = Get.Keybind(LocalSection.Container,LocalWindow,Window,Get,Bind)
 				return Bind
 			end
 			function Section:AddDropdown(Dropdown)
