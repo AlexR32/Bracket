@@ -1,5 +1,7 @@
 # BracketRewrite
-Basically V3.1 but who cares lol
+Also Known As V3.1
+
+![](https://imgur.com/NXzsvUu.png)
 
 ### Loadstring
 ```lua
@@ -74,6 +76,15 @@ local Window = Library({Name = "Window",Color = Color3.new(1,0.5,0.25),Size = UD
 
         local Section = Tab:AddSection({Name = "Section",Side = "Right"}) do
             --Same Elements as in tab but without side option
+            Section:AddDivider()
+            Section:AddLabel()
+            Section:AddButton()
+            Section:AddToggle()
+            Section:AddSlider()
+            Section:AddTextbox()
+            Section:AddBind()
+            Section:AddDropdown({List = workspace:GetChildren()})
+            Section:AddColorpicker()
         end
     end
 end
