@@ -1,4 +1,4 @@
-local MainModule = Game:GetObjects("rbxassetid://7974127463")[1]
+local MainModule = game:GetObjects("rbxassetid://7974127463")[1]
 
 local function GetModule(Module)
 	return loadstring(MainModule[Module].Source)()
@@ -36,11 +36,11 @@ return function(Window)
 	Window.RainbowHue = 0
 	Window.Colorable = {}
 
-	local LocalWindow = Get.Window(Get,Window)
+	local LocalScreen = Get.Window(Get,Window)
 	function Window:AddTab(Tab)
 		Tab = Get.Utilities:CheckType(Tab, "table") or {}
 		Tab.Name = Get.Utilities:CheckType(Tab.Name, "string") or "Tab"
-		local LocalTab = Get.Tab(LocalWindow, Window, Get, Tab)
+		local LocalTab = Get.Tab(LocalScreen, Window, Get, Tab)
 		
 		function Tab:AddDivider(Divider)
 			Divider = Get.Utilities:CheckType(Divider, "table") or {}
@@ -64,7 +64,7 @@ return function(Window)
 			Button.Side = Get.Utilities:CheckType(Button.Side, "string") or nil
 
 			Button.Callback = Get.Utilities:CheckType(Button.Callback, "function") or function() print("Hello World!") end
-			local LocalButton = Get.Button(Get.Utilities:ChooseTabSide(Button.Side,LocalTab),LocalWindow,Window,Get,Button)
+			local LocalButton = Get.Button(Get.Utilities:ChooseTabSide(Button.Side,LocalTab),LocalScreen,Window,Get,Button)
 			return Button
 		end
 		function Tab:AddToggle(Toggle)
@@ -74,7 +74,7 @@ return function(Window)
 
 			Toggle.Value = Get.Utilities:CheckType(Toggle.Value, "boolean") or false
 			Toggle.Callback = Get.Utilities:CheckType(Toggle.Callback, "function") or print
-			local LocalToggle = Get.Toggle(Get.Utilities:ChooseTabSide(Toggle.Side,LocalTab),LocalWindow,Window,Get,Toggle)
+			local LocalToggle = Get.Toggle(Get.Utilities:ChooseTabSide(Toggle.Side,LocalTab),LocalScreen,Window,Get,Toggle)
 			return Toggle
 		end
 		function Tab:AddSlider(Slider)
@@ -88,7 +88,7 @@ return function(Window)
 			Slider.Unit = Get.Utilities:CheckType(Slider.Unit, "string") or ""
 			Slider.Value = Get.Utilities:CheckType(Slider.Value, "number") or (Slider.Max / 2)
 			Slider.Callback = Get.Utilities:CheckType(Slider.Callback, "function") or print
-			local LocalSlider = Get.Slider(Get.Utilities:ChooseTabSide(Slider.Side,LocalTab),LocalWindow,Window,Get,Slider)
+			local LocalSlider = Get.Slider(Get.Utilities:ChooseTabSide(Slider.Side,LocalTab),LocalScreen,Window,Get,Slider)
 			return Slider
 		end
 		function Tab:AddTextbox(Textbox)
@@ -100,7 +100,7 @@ return function(Window)
 			Textbox.Placeholder = Get.Utilities:CheckType(Textbox.Placeholder, "string") or "Textbox"
 			Textbox.NumbersOnly = Get.Utilities:CheckType(Textbox.NumbersOnly, "boolean") or false
 			Textbox.Callback = Get.Utilities:CheckType(Textbox.Callback, "function") or print
-			local LocalSlider = Get.Textbox(Get.Utilities:ChooseTabSide(Textbox.Side,LocalTab),LocalWindow,Window,Get,Textbox)
+			local LocalSlider = Get.Textbox(Get.Utilities:ChooseTabSide(Textbox.Side,LocalTab),LocalScreen,Window,Get,Textbox)
 			return Textbox
 		end
 		function Tab:AddBind(Bind)
@@ -112,7 +112,7 @@ return function(Window)
 			Bind.Mouse = Get.Utilities:CheckType(Bind.Mouse, "boolean") or false
 			Bind.Callback = Get.Utilities:CheckType(Bind.Callback, "function") or print
 			Bind.Blacklist = Get.Utilities:CheckType(Bind.Blacklist, "table") or {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}
-			local LocalBind = Get.Keybind(Get.Utilities:ChooseTabSide(Bind.Side,LocalTab),LocalWindow,Window,Get,Bind)
+			local LocalBind = Get.Keybind(Get.Utilities:ChooseTabSide(Bind.Side,LocalTab),LocalScreen,Window,Get,Bind)
 			return Bind
 		end
 		function Tab:AddDropdown(Dropdown)
@@ -121,7 +121,7 @@ return function(Window)
 			Dropdown.Side = Get.Utilities:CheckType(Dropdown.Side, "string") or nil
 
 			Dropdown.Callback = Get.Utilities:CheckType(Dropdown.Callback, "function") or print
-			local LocalDropdown = Get.Dropdown(Get.Utilities:ChooseTabSide(Dropdown.Side,LocalTab),LocalWindow,Window,Get,Dropdown)
+			local LocalDropdown = Get.Dropdown(Get.Utilities:ChooseTabSide(Dropdown.Side,LocalTab),LocalScreen,Window,Get,Dropdown)
 			return Dropdown
 		end
 		function Tab:AddColorpicker(Colorpicker)
@@ -131,7 +131,7 @@ return function(Window)
 			
 			Colorpicker.Color = Get.Utilities:CheckType(Colorpicker.Color, "Color3") or Color3.new(1,0,0)
 			Colorpicker.Callback = Get.Utilities:CheckType(Colorpicker.Callback, "function") or print
-			local LocalColorpicker = Get.Colorpicker(Get.Utilities:ChooseTabSide(Colorpicker.Side,LocalTab),LocalWindow,Window,Get,Colorpicker)
+			local LocalColorpicker = Get.Colorpicker(Get.Utilities:ChooseTabSide(Colorpicker.Side,LocalTab),LocalScreen,Window,Get,Colorpicker)
 			return Colorpicker
 		end
 		function Tab:AddSection(Section)
@@ -159,7 +159,7 @@ return function(Window)
 				Button.Name = Get.Utilities:CheckType(Button.Name, "string") or "Button"
 
 				Button.Callback = Get.Utilities:CheckType(Button.Callback, "function") or function() print("Hello World!") end
-				local LocalButton = Get.Button(LocalSection.Container,LocalWindow,Window,Get,Button)
+				local LocalButton = Get.Button(LocalSection.Container,LocalScreen,Window,Get,Button)
 				return Button
 			end
 			function Section:AddToggle(Toggle)
@@ -168,7 +168,7 @@ return function(Window)
 
 				Toggle.Value = Get.Utilities:CheckType(Toggle.Value, "boolean") or false
 				Toggle.Callback = Get.Utilities:CheckType(Toggle.Callback, "function") or print
-				local LocalToggle = Get.Toggle(LocalSection.Container,LocalWindow,Window,Get,Toggle)
+				local LocalToggle = Get.Toggle(LocalSection.Container,LocalScreen,Window,Get,Toggle)
 				return Toggle
 			end
 			function Section:AddSlider(Slider)
@@ -181,7 +181,7 @@ return function(Window)
 				Slider.Unit = Get.Utilities:CheckType(Slider.Unit, "string") or ""
 				Slider.Value = Get.Utilities:CheckType(Slider.Value, "number") or (Slider.Max / 2)
 				Slider.Callback = Get.Utilities:CheckType(Slider.Callback, "function") or print
-				local LocalSlider = Get.Slider(LocalSection.Container,LocalWindow,Window,Get,Slider)
+				local LocalSlider = Get.Slider(LocalSection.Container,LocalScreen,Window,Get,Slider)
 				return Slider
 			end
 			function Section:AddTextbox(Textbox)
@@ -193,7 +193,7 @@ return function(Window)
 				Textbox.Placeholder = Get.Utilities:CheckType(Textbox.Placeholder, "string") or "Textbox"
 				Textbox.NumbersOnly = Get.Utilities:CheckType(Textbox.NumbersOnly, "boolean") or false
 				Textbox.Callback = Get.Utilities:CheckType(Textbox.Callback, "function") or print
-				local LocalSlider = Get.Textbox(LocalSection.Container,LocalWindow,Window,Get,Textbox)
+				local LocalSlider = Get.Textbox(LocalSection.Container,LocalScreen,Window,Get,Textbox)
 				return Textbox
 			end
 			function Section:AddBind(Bind)
@@ -204,7 +204,7 @@ return function(Window)
 				Bind.Mouse = Get.Utilities:CheckType(Bind.Mouse, "boolean") or false
 				Bind.Callback = Get.Utilities:CheckType(Bind.Callback, "function") or print
 				Bind.Blacklist = Get.Utilities:CheckType(Bind.Blacklist, "table") or {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}
-				local LocalBind = Get.Keybind(LocalSection.Container,LocalWindow,Window,Get,Bind)
+				local LocalBind = Get.Keybind(LocalSection.Container,LocalScreen,Window,Get,Bind)
 				return Bind
 			end
 			function Section:AddDropdown(Dropdown)
@@ -212,7 +212,7 @@ return function(Window)
 				Dropdown.Name = Get.Utilities:CheckType(Dropdown.Name, "string") or "Dropdown"
 
 				Dropdown.Callback = Get.Utilities:CheckType(Dropdown.Callback, "function") or print
-				local LocalDropdown = Get.Dropdown(LocalSection.Container,LocalWindow,Window,Get,Dropdown)
+				local LocalDropdown = Get.Dropdown(LocalSection.Container,LocalScreen,Window,Get,Dropdown)
 				return Dropdown
 			end
 			function Section:AddColorpicker(Colorpicker)
@@ -221,7 +221,7 @@ return function(Window)
 				
 				Colorpicker.Color = Get.Utilities:CheckType(Colorpicker.Color, "Color3") or Color3.new(1,0,0)
 				Colorpicker.Callback = Get.Utilities:CheckType(Colorpicker.Callback, "function") or print
-				local LocalColorpicker = Get.Colorpicker(LocalSection.Container,LocalWindow,Window,Get,Colorpicker)
+				local LocalColorpicker = Get.Colorpicker(LocalSection.Container,LocalScreen,Window,Get,Colorpicker)
 				return Colorpicker
 			end
 			return Section
