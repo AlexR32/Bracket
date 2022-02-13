@@ -1,18 +1,18 @@
 # BracketRewrite
 Also Known As V3.1
 
-![](https://imgur.com/NXzsvUu.png)
+![Preview](https://imgur.com/NXzsvUu.png)
 
 ### Loadstring
 ```lua
-local Library = loadstring(Game:HttpGet("https://raw.githubusercontent.com/AlexR32/BracketRewrite/main/Library.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexR32/BracketRewrite/main/Library.lua"))()
 -- or
-local Library = loadstring(Game:GetObjects("rbxassetid://7974127463")[1].Source)()
+local Library = loadstring(game:GetObjects("rbxassetid://7974127463")[1].Source)()
 ```
 
 ### Preview
 ```lua
-local Library = loadstring(Game:GetObjects("rbxassetid://7974127463")[1].Source)()
+local Library = loadstring(game:GetObjects("rbxassetid://7974127463")[1].Source)()
 local Window = Library({Name = "Window",Color = Color3.new(1,0.5,0.25),Size = UDim2.new(0,496,0,496),Position = UDim2.new(0.5,-248,0.5,-248)}) do
     --Window:ChangeName("Window")
     --Window:ChangeSize(UDim2.new(0,496,0,496))
@@ -20,7 +20,6 @@ local Window = Library({Name = "Window",Color = Color3.new(1,0.5,0.25),Size = UD
     --Window:ChangeColor(Color3.new(1,0.5,0.25))
     --Window:Toggle(true)
     --Window.Background -- ImageLabel
-
     local Tab = Window:AddTab({Name = "Tab"}) do
         --Tab:ChangeName("Tab")
 
