@@ -1,12 +1,15 @@
 # BracketRewrite
 Also Known As V3.1
 
+Since I don't update this repository that often, here is the [link to the roblox model](https://www.roblox.com/library/7974127463)
+
 ![Preview](https://imgur.com/NXzsvUu.png)
 
 ### Loadstring
 ```lua
+-- not updated as often
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexR32/BracketRewrite/main/Library.lua"))()
--- or
+-- constantly updated
 local Library = loadstring(game:GetObjects("rbxassetid://7974127463")[1].Source)()
 ```
 
