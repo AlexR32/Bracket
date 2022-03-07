@@ -3,82 +3,82 @@ Also Known As V3.1
 
 Since I don't update this repository that often, here is the [link to the roblox model](https://www.roblox.com/library/7974127463)
 
-![Preview](https://imgur.com/NXzsvUu.png)
+![Preview](https://i.imgur.com/DSBntRq.png)
 
 ### Example
 ```lua
 local Library = loadstring(game:GetObjects("rbxassetid://7974127463")[1].Source)()
-local Window = Library({Name = "Window",Color = Color3.new(1,0.5,0.25),Size = UDim2.new(0,496,0,496),Position = UDim2.new(0.5,-248,0.5,-248)}) do
+local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Size = UDim2.new(0,496,0,496),Position = UDim2.new(0.5,-248,0.5,-248)}) do
     --Window:ChangeName("Window")
     --Window:ChangeSize(UDim2.new(0,496,0,496))
     --Window:ChangePosition(UDim2.new(0.5,-248,0.5,-248))
     --Window:ChangeColor(Color3.new(1,0.5,0.25))
     --Window:Toggle(true)
     --Window.Background -- ImageLabel
-    local Tab = Window:AddTab({Name = "Tab"}) do
+    local Tab = Window:Tab({Name = "Tab"}) do
         --Tab:ChangeName("Tab")
 
         --Side might be "Left", "Right" or nil for auto side choose
         --if callback nil then it will be replaced with print function
-        Tab:AddDivider({Text = "Divider",Side = "Left"})
+        Tab:Divider({Text = "Divider",Side = "Left"})
 
-        local Label = Tab:AddLabel({Text = "Label",Side = "Left"})
+        local Label = Tab:Label({Text = "Label",Side = "Left"})
         --Label:ChangeText("Label")
 
-        local Button = Tab:AddButton({Name = "Button",Side = "Left",Callback = function()end})
+        local Button = Tab:Button({Name = "Button",Side = "Left",Callback = function()end})
         --Button:ChangeName("Button")
         --Button:ChangeCallback(function()end)
-        --Button:AddToolTip("ToolTip")
+        --Button:ToolTip("ToolTip")
 
-        local Toggle = Tab:AddToggle({Name = "Toggle",Side = "Left",Value = false,Callback = function(Bool)end})
+        local Toggle = Tab:Toggle({Name = "Toggle",Side = "Left",Value = false,Callback = function(Bool)end})
         --Toggle:ChangeName("Toggle")
         --Toggle:ChangeValue(true)
         --Toggle:ChangeCallback(function(Bool)end)
-        --Toggle:AddToolTip("ToolTip")
-        --Toggle:AddBind({Key = "NONE",Mouse = false,Callback = function(Bool,Key)end,Blacklist = {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}})
+        --Toggle:ToolTip("ToolTip")
+        --Toggle:Bind({Key = "NONE",Mouse = false,Callback = function(Bool,Key)end,Blacklist = {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}})
 
-        local Slider = Tab:AddSlider({Name = "Slider",Side = "Left",Min = 0,Max = 100,Value = 50,Precise = 2,Unit = "",Callback = function(Number)end})
+        local Slider = Tab:Slider({Name = "Slider",Side = "Left",Min = 0,Max = 100,Value = 50,Precise = 2,Unit = "",Callback = function(Number)end})
         --Slider:ChangeName("Slider")
         --Slider:ChangeValue(50)
         --Slider:ChangeCallback(function(Number)end)
-        --Slider:AddToolTip("ToolTip")
+        --Slider:ToolTip("ToolTip")
 
-        local Textbox = Tab:AddTextbox({Name = "Textbox",Side = "Left",Text = "Text",Placeholder = "Placeholder",NumberOnly = false,Callback = function(String)end})
+        local Textbox = Tab:Textbox({Name = "Textbox",Side = "Left",Text = "Text",Placeholder = "Placeholder",NumberOnly = false,Callback = function(String)end})
         --Textbox:ChangeName("Textbox")
         --Textbox:ChangeText("Text")
         --Textbox:ChangePlaceholder("Placeholder")
         --Textbox:ChangeCallback(function(String)end)
-        --Textbox:AddToolTip("ToolTip")
+        --Textbox:ToolTip("ToolTip")
 
-        local Keybind = Tab:AddBind({Name = "Keybind",Side = "Left",Key = "NONE",Mouse = false,Callback = function(Bool,Key)end,Blacklist = {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}})
+        local Keybind = Tab:Bind({Name = "Keybind",Side = "Left",Key = "NONE",Mouse = false,Callback = function(Bool,Key)end,Blacklist = {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}})
         --Keybind:ChangeName("Keybind")
         --Keybind:ChangeCallback(function(Bool,Key)end)
-        --Keybind:AddToolTip("ToolTip")
+        --Keybind:ToolTip("ToolTip")
 
-        local Dropdown = Tab:AddDropdown({Name = "Dropdown",Side = "Left",Default = game.Players.LocalPlayer.Name, List = workspace:GetChildren(),Callback = function(String)end})
-        --Dropdown:AddOption("Option")
+        local Dropdown = Tab:Dropdown({Name = "Dropdown",Side = "Left",Default = "Terrain", List = workspace:GetChildren(),Callback = function(String)end})
+        --Dropdown:Option("Option")
         --Dropdown:RemoveOption("Option")
         --Dropdown:SelectOption("Option")
         --Dropdown:ChangeName("Dropdown")
-        --Dropdown:AddToolTip("ToolTip")
+        --Dropdown:ToolTip("ToolTip")
 
-        local Colorpicker = Tab:AddColorpicker({Name = "Colorpicker",Side = "Left",Color = Color3.new(1,0,0),Callback = function(Color)end})
+        local Colorpicker = Tab:Colorpicker({Name = "Colorpicker",Side = "Left",Color = Color3.new(1,0,0),Callback = function(Color,Table)print(repr(Table))end})
         --Colorpicker:ChangeName("Colorpicker")
         --Colorpicker:ChangeCallback(function(Color3)end)
         --Colorpicker:ChangeValue(Color3.new(1,0,0))
-        --Colorpicker:AddToolTip("ToolTip")
+        --Colorpicker:ToolTip("ToolTip")
 
-        local Section = Tab:AddSection({Name = "Section",Side = "Right"}) do
+        local Section = Tab:Section({Name = "Section",Side = "Right"}) do
             --Same Elements as in tab but without side option
-            Section:AddDivider()
-            Section:AddLabel()
-            Section:AddButton()
-            Section:AddToggle()
-            Section:AddSlider()
-            Section:AddTextbox()
-            Section:AddBind()
-            Section:AddDropdown({List = workspace:GetChildren()})
-            Section:AddColorpicker()
+            Section:Divider()
+            Section:Label()
+            Section:Button()
+            Section:Toggle()
+            Section:Slider()
+            Section:Textbox()
+            Section:Bind()
+            Section:Dropdown({List = workspace:GetChildren()})
+            Section:Colorpicker()
         end
     end
 end
