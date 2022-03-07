@@ -8,6 +8,7 @@ Since I don't update this repository that often, here is the [link to the roblox
 ### Example
 ```lua
 local Library = loadstring(game:GetObjects("rbxassetid://7974127463")[1].Source)()
+Library:Notification("Title","Description",5,function()end)
 local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Size = UDim2.new(0,496,0,496),Position = UDim2.new(0.5,-248,0.5,-248)}) do
     --Window:ChangeName("Window")
     --Window:ChangeSize(UDim2.new(0,496,0,496))
@@ -56,7 +57,8 @@ local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Si
         --Keybind:ToolTip("ToolTip")
 
         local Dropdown = Tab:Dropdown({Name = "Dropdown",Side = "Left",Default = "Terrain", List = workspace:GetChildren(),Callback = function(String)end})
-        --Dropdown:Option("Option")
+        --Dropdown:Clear()
+        --Dropdown:AddOption("Option")
         --Dropdown:RemoveOption("Option")
         --Dropdown:SelectOption("Option")
         --Dropdown:ChangeName("Dropdown")
