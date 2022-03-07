@@ -36,7 +36,7 @@ local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Si
         --Toggle:ChangeValue(true)
         --Toggle:ChangeCallback(function(Bool)end)
         --Toggle:ToolTip("ToolTip")
-        --Toggle:Bind({Key = "NONE",Mouse = false,Callback = function(Bool,Key)end,Blacklist = {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}})
+        --Toggle:Keybind({Key = "NONE",Mouse = false,Blacklist = {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"},Callback = function(Bool,Key)end})
 
         local Slider = Tab:Slider({Name = "Slider",Side = "Left",Min = 0,Max = 100,Value = 50,Precise = 2,Unit = "",Callback = function(Number)end})
         --Slider:ChangeName("Slider")
@@ -51,7 +51,7 @@ local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Si
         --Textbox:ChangeCallback(function(String)end)
         --Textbox:ToolTip("ToolTip")
 
-        local Keybind = Tab:Bind({Name = "Keybind",Side = "Left",Key = "NONE",Mouse = false,Callback = function(Bool,Key)end,Blacklist = {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"}})
+        local Keybind = Tab:Keybind({Name = "Keybind",Side = "Left",Key = "NONE",Mouse = false,Blacklist = {"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"},Callback = function(Bool,Key)end})
         --Keybind:ChangeName("Keybind")
         --Keybind:ChangeCallback(function(Bool,Key)end)
         --Keybind:ToolTip("ToolTip")
@@ -78,7 +78,7 @@ local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Si
             Section:Toggle()
             Section:Slider()
             Section:Textbox()
-            Section:Bind()
+            Section:Keybind()
             Section:Dropdown({List = workspace:GetChildren()})
             Section:Colorpicker()
         end
