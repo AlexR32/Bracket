@@ -9,7 +9,7 @@ Since I don't update this repository that often, here is the [link to the roblox
 ```lua
 local Library = loadstring(game:GetObjects("rbxassetid://7974127463")[1].Source)()
 Library:Notification("Title","Description",5,function()end)
-local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Size = UDim2.new(0,496,0,496),Position = UDim2.new(0.5,-248,0.5,-248)}) do
+local Window = Library:Window({Name = "Window",Enabled = true,Color = Color3.new(1,0.5,0.25),Size = UDim2.new(0,496,0,496),Position = UDim2.new(0.5,-248,0.5,-248)}) do
     --Window:ChangeName("Window")
     --Window:ChangeSize(UDim2.new(0,496,0,496))
     --Window:ChangePosition(UDim2.new(0.5,-248,0.5,-248))
@@ -55,8 +55,27 @@ local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Si
         --Keybind:ChangeName("Keybind")
         --Keybind:ChangeCallback(function(Bool,Key)end)
         --Keybind:ToolTip("ToolTip")
-
-        local Dropdown = Tab:Dropdown({Name = "Dropdown",Side = "Left",Default = "Terrain", List = workspace:GetChildren(),Callback = function(String)end})
+        local BodyParts = {"Head"}
+        local Dropdown = Tab:Dropdown({Name = "Dropdown",Side = "Left",Default = BodyParts,List = {
+            {
+                Name = "Head",
+                Mode = "Toggle",
+                Value = false,
+                Callback = function(Selected)
+                    BodyParts = Selected
+                    print(BodyParts)
+                end
+            },
+            {
+                Name = "HumanoidRootPart",
+                Mode = "Toggle",
+                Value = false,
+                Callback = function(Selected)
+                    BodyParts = Selected
+                    print(BodyParts)
+                end
+            }
+        }})
         --Dropdown:Clear()
         --Dropdown:AddOption("Option")
         --Dropdown:RemoveOption("Option")
@@ -64,7 +83,7 @@ local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Si
         --Dropdown:ChangeName("Dropdown")
         --Dropdown:ToolTip("ToolTip")
 
-        local Colorpicker = Tab:Colorpicker({Name = "Colorpicker",Side = "Left",Color = Color3.new(1,0,0),Callback = function(Color,Table)print(repr(Table))end})
+        local Colorpicker = Tab:Colorpicker({Name = "Colorpicker",Side = "Left",Color = Color3.new(1,0,0),Callback = function(Color,Table)end})
         --Colorpicker:ChangeName("Colorpicker")
         --Colorpicker:ChangeCallback(function(Color3)end)
         --Colorpicker:ChangeValue(Color3.new(1,0,0))
@@ -84,4 +103,5 @@ local Window = Library:Window({Name = "Window",Color = Color3.new(1,0.5,0.25),Si
         end
     end
 end
+
 ```
