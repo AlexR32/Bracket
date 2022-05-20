@@ -1,10 +1,7 @@
-# BracketRewrite
-(Discontinued, use new version that is in [Parvus Hub](https://github.com/AlexR32/Parvus/blob/main/Utilities/UI.lua))  
-Also Known As V3.1  
-Since I don't update this repository that often, here is the [link to the roblox model](https://www.roblox.com/library/7974127463)
+# Bracket
 
 ![Preview](https://i.imgur.com/DSBntRq.png)
-### Example
+### Example (BracketV3.1)
 ```lua
 local Library = loadstring(game:GetObjects("rbxassetid://7974127463")[1].Source)()
 Library:Notification("Title","Description",5,function()end)
