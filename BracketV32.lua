@@ -10,10 +10,13 @@ local Debug,LocalPlayer = false,PlayerService.LocalPlayer
 local MainAssetFolder = Debug and ReplicatedStorage.BracketV32
 	or InsertService:LoadLocalAsset("rbxassetid://9153139105")
 
-local function GetAsset(AssetPath)
-	AssetPath = AssetPath:split("/")
-	return MainAssetFolder[AssetPath[1]][AssetPath[2]]:Clone()
-end
+	local function GetAsset(AssetPath)
+		AssetPath = AssetPath:split("/")
+		local Asset = MainAssetFolder
+		for Index,Name in pairs(AssetPath) do
+			Asset = Asset[Name]
+		end return Asset:Clone()
+	end
 local function GetLongest(A,B)
 	return A > B and A or B
 end
@@ -26,7 +29,6 @@ end
 
 local function MakeDraggable(Dragger,Object,Callback)
 	local StartPosition,StartDrag = nil,nil
-
 	Dragger.InputBegan:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
 			StartPosition = UserInputService:GetMouseLocation()
@@ -51,7 +53,6 @@ end
 
 local function MakeResizeable(Dragger,Object,MinSize,Callback)
 	local StartPosition,StartSize = nil,nil
-
 	Dragger.InputBegan:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
 			StartPosition = UserInputService:GetMouseLocation()
@@ -116,31 +117,31 @@ local function ChooseTabSide(TabAsset,Mode)
 	end
 end
 
-local function GetConfigs()
-	if not isfolder("Parvus") then makefolder("Parvus") end
-	if not isfolder("Parvus\\Configs") then makefolder("Parvus\\Configs") end
-	if not isfile("Parvus\\DefaultConfig.txt") then writefile("Parvus\\DefaultConfig.txt","") end
+local function GetConfigs(PFName)
+	if not isfolder(PFName) then makefolder(PFName) end
+	if not isfolder(PFName.."\\Configs") then makefolder(PFName.."\\Configs") end
+	if not isfile(PFName.."\\DefaultConfig.txt") then writefile(PFName.."\\DefaultConfig.txt","") end
 
 	local Configs = {}
-	for Index,File in pairs(listfiles("Parvus\\Configs") or {}) do
-		File = File:gsub("Parvus\\Configs\\","")
-		File = File:gsub(".json","")
-		Configs[Index] = File
+	for Index,Config in pairs(listfiles(PFName.."\\Configs") or {}) do
+		Config = Config:gsub(PFName.."\\Configs\\","")
+		Config = Config:gsub(".json","")
+		Configs[Index] = Config
 	end
 	return Configs
 end
-local function ConfigsToList()
-	if not isfolder("Parvus") then makefolder("Parvus") end
-	if not isfolder("Parvus\\Configs") then makefolder("Parvus\\Configs") end
-	if not isfile("Parvus\\DefaultConfig.txt") then writefile("Parvus\\DefaultConfig.txt","") end
+local function ConfigsToList(PFName)
+	if not isfolder(PFName) then makefolder(PFName) end
+	if not isfolder(PFName.."\\Configs") then makefolder(PFName.."\\Configs") end
+	if not isfile(PFName.."\\DefaultConfig.txt") then writefile(PFName.."\\DefaultConfig.txt","") end
 
 	local Configs = {}
-	for Index,File in pairs(listfiles("Parvus\\Configs") or {}) do
-		File = File:gsub("Parvus\\Configs\\","")
-		File = File:gsub(".json","")
-		local DefaultConfig = readfile("Parvus\\DefaultConfig.txt")
-		Configs[Index] = {Name = File,Mode = "Button",
-			Value = File == DefaultConfig}
+	for Index,Config in pairs(listfiles(PFName.."\\Configs") or {}) do
+		Config = Config:gsub(PFName.."\\Configs\\","")
+		Config = Config:gsub(".json","")
+		local DefaultConfig = readfile(PFName.."\\DefaultConfig.txt")
+		Configs[Index] = {Name = Config,Mode = "Button",
+			Value = Config == DefaultConfig}
 	end
 	return Configs
 end
@@ -160,11 +161,11 @@ local function InitScreen()
 	if not Debug then sethiddenproperty(ScreenAsset,"OnTopOfCoreBlur",true) end
 	ScreenAsset.Name = "Bracket " .. game:GetService("HttpService"):GenerateGUID(false)
 	ScreenAsset.Parent = Debug and LocalPlayer:FindFirstChildOfClass("PlayerGui") or CoreGui
-    --[[if Debug then
-        ScreenAsset.Parent = LocalPlayer.PlayerGui
-    else
-        Parvus.Utilities.Misc:HideObject(ScreenAsset)
-    end]]
+	--[[if Debug then
+		ScreenAsset.Parent = LocalPlayer.PlayerGui
+	else
+		Parvus.Utilities.Misc:HideObject(ScreenAsset)
+	end]]
 	return {ScreenAsset = ScreenAsset}
 end
 local function InitWindow(ScreenAsset,Window)
@@ -193,11 +194,11 @@ local function InitWindow(ScreenAsset,Window)
 	end)
 	RunService.RenderStepped:Connect(function()
 		Window.RainbowHue = os.clock()%10/10
-        --[[if Window.RainbowHue < 1 then
-            Window.RainbowHue = Window.RainbowHue + 0.001
-        else
-            Window.RainbowHue = 0
-        end]]
+		--[[if Window.RainbowHue < 1 then
+			Window.RainbowHue = Window.RainbowHue + 0.001
+		else
+			Window.RainbowHue = 0
+		end]]
 	end)
 	function Window:SetName(Name)
 		Window.Name = Name
@@ -213,8 +214,8 @@ local function InitWindow(ScreenAsset,Window)
 	end
 	function Window:SetColor(Color)
 		if Color.R < 5/255
-			and Color.G < 5/255
-			and Color.B < 5/255 then
+		and Color.G < 5/255
+		and Color.B < 5/255 then
 			Color = Color3.fromRGB(5,5,5)
 		end
 
@@ -233,12 +234,12 @@ local function InitWindow(ScreenAsset,Window)
 		WindowAsset.Visible = Window.Enabled
 
 		if not Debug  then
-			RunService:SetRobloxGuiFocused(Window.Enabled and Window.Flags["UI/Blur"]) end
+		RunService:SetRobloxGuiFocused(Window.Enabled and Window.Flags["UI/Blur"]) end
 		if not Window.Enabled then for Index,Instance in pairs(ScreenAsset:GetChildren()) do
-				if Instance.Name == "Palette" or Instance.Name == "OptionContainer" then
-					Instance.Visible = false
-				end
-			end end
+			if Instance.Name == "Palette" or Instance.Name == "OptionContainer" then
+				Instance.Visible = false
+			end
+		end end
 	end
 
 	function Window:SetValue(Flag,Value)
@@ -267,12 +268,12 @@ local function InitWindow(ScreenAsset,Window)
 		ScreenAsset.Watermark.Title.Text = Watermark.Title
 		ScreenAsset.Watermark.Position = UDim2.new(0.95,0,0,10)
 		ScreenAsset.Watermark.Size = UDim2.new(
-			0,ScreenAsset.Watermark.Title.TextBounds.X + 6,
-			0,ScreenAsset.Watermark.Title.TextBounds.Y + 6)
+		0,ScreenAsset.Watermark.Title.TextBounds.X + 6,
+		0,ScreenAsset.Watermark.Title.TextBounds.Y + 6)
 		MakeDraggable(ScreenAsset.Watermark,ScreenAsset.Watermark,function(Position)
 			Window.Flags[Watermark.Flag] = 
-				{Position.X.Scale,Position.X.Offset,
-					Position.Y.Scale,Position.Y.Offset}
+			{Position.X.Scale,Position.X.Offset,
+			Position.Y.Scale,Position.Y.Offset}
 		end)
 
 		function Watermark:Toggle(Boolean)
@@ -301,21 +302,21 @@ local function InitWindow(ScreenAsset,Window)
 		Window.Watermark = Watermark
 	end
 
-	function Window:SaveConfig(Name)
+	function Window:SaveConfig(PFName,Name)
 		local Config = {}
-		if table.find(GetConfigs(),Name) then
-			Config = HttpService:JSONDecode(readfile("Parvus\\Configs\\"..Name..".json"))
+		if table.find(GetConfigs(PFName),Name) then
+			Config = HttpService:JSONDecode(readfile(PFName.."\\Configs\\"..Name..".json"))
 		end
 		for Index,Element in pairs(Window.Elements) do
 			if not Element.IgnoreFlag then
 				Config[Element.Flag] = Window.Flags[Element.Flag]
 			end
 		end
-		writefile("Parvus\\Configs\\"..Name..".json",HttpService:JSONEncode(Config))
+		writefile(PFName.."\\Configs\\"..Name..".json",HttpService:JSONEncode(Config))
 	end
-	function Window:LoadConfig(Name)
-		if table.find(GetConfigs(),Name) then
-			local DecodedJSON = HttpService:JSONDecode(readfile("Parvus\\Configs\\"..Name..".json"))
+	function Window:LoadConfig(PFName,Name)
+		if table.find(GetConfigs(PFName),Name) then
+			local DecodedJSON = HttpService:JSONDecode(readfile(PFName.."\\Configs\\"..Name..".json"))
 			for Index,Element in pairs(Window.Elements) do
 				if DecodedJSON[Element.Flag] ~= nil then
 					Element:SetValue(DecodedJSON[Element.Flag])
@@ -323,29 +324,29 @@ local function InitWindow(ScreenAsset,Window)
 			end
 		end
 	end
-	function Window:DeleteConfig(Name)
-		if table.find(GetConfigs(),Name) then
-			delfile("Parvus\\Configs\\"..Name..".json")
+	function Window:DeleteConfig(PFName,Name)
+		if table.find(GetConfigs(PFName),Name) then
+			delfile(PFName.."\\Configs\\"..Name..".json")
 		end
 	end
-	function Window:GetDefaultConfig()
-		if not isfolder("Parvus") then makefolder("Parvus") end
-		if not isfolder("Parvus\\Configs") then makefolder("Parvus\\Configs") end
-		if not isfile("Parvus\\DefaultConfig.txt") then writefile("Parvus\\DefaultConfig.txt","") end
+	function Window:GetDefaultConfig(PFName)
+		if not isfolder(PFName) then makefolder(PFName) end
+		if not isfolder(PFName.."\\Configs") then makefolder(PFName.."\\Configs") end
+		if not isfile(PFName.."\\DefaultConfig.txt") then writefile(PFName.."\\DefaultConfig.txt","") end
 
-		local DefaultConfig = readfile("Parvus\\DefaultConfig.txt")
-		if table.find(GetConfigs(),DefaultConfig) then
+		local DefaultConfig = readfile(PFName.."\\DefaultConfig.txt")
+		if table.find(GetConfigs(PFName),DefaultConfig) then
 			return DefaultConfig
 		end
 	end
-	function Window:LoadDefaultConfig()
-		if not isfolder("Parvus") then makefolder("Parvus") end
-		if not isfolder("Parvus\\Configs") then makefolder("Parvus\\Configs") end
-		if not isfile("Parvus\\DefaultConfig.txt") then writefile("Parvus\\DefaultConfig.txt","") end
+	function Window:LoadDefaultConfig(PFName)
+		if not isfolder(PFName) then makefolder(PFName) end
+		if not isfolder(PFName.."\\Configs") then makefolder(PFName.."\\Configs") end
+		if not isfile(PFName.."\\DefaultConfig.txt") then writefile(PFName.."\\DefaultConfig.txt","") end
 
-		local DefaultConfig = readfile("Parvus\\DefaultConfig.txt")
-		if table.find(GetConfigs(),DefaultConfig) then
-			Window:LoadConfig(DefaultConfig)
+		local DefaultConfig = readfile(PFName.."\\DefaultConfig.txt")
+		if table.find(GetConfigs(PFName),DefaultConfig) then
+			Window:LoadConfig(PFName,DefaultConfig)
 		end
 	end
 
@@ -882,7 +883,7 @@ local function InitDropdown(Parent,ScreenAsset,Window,Dropdown)
 			ContainerRender = RunService.RenderStepped:Connect(function()
 				if not OptionContainerAsset.Visible then ContainerRender:Disconnect() end
 				OptionContainerAsset.Position = UDim2.new(0,DropdownAsset.Background.AbsolutePosition.X,0,
-					DropdownAsset.Background.AbsolutePosition.Y + DropdownAsset.Background.AbsoluteSize.Y + 42)
+				DropdownAsset.Background.AbsolutePosition.Y + DropdownAsset.Background.AbsoluteSize.Y + 42)
 				OptionContainerAsset.Size = UDim2.new(0,DropdownAsset.Background.AbsoluteSize.X,0,OptionContainerAsset.ListLayout.AbsoluteContentSize.Y + 2)
 			end)
 			OptionContainerAsset.Visible = true
@@ -898,10 +899,10 @@ local function InitDropdown(Parent,ScreenAsset,Window,Dropdown)
 		DropdownAsset.Background.Position = UDim2.new(0.5,0,0,DropdownAsset.Title.Size.Y.Offset)
 		DropdownAsset.Size = UDim2.new(1,0,0,DropdownAsset.Title.Size.Y.Offset + DropdownAsset.Background.Size.Y.Offset)
 	end)
-	DropdownAsset.Background.Value:GetPropertyChangedSignal("TextBounds"):Connect(function()
+	--[[DropdownAsset.Background.Value:GetPropertyChangedSignal("TextBounds"):Connect(function()
 		DropdownAsset.Background.Size = UDim2.new(1,0,0,DropdownAsset.Background.Value.TextBounds.Y + 2)
 		DropdownAsset.Size = UDim2.new(1,0,0,DropdownAsset.Title.Size.Y.Offset + DropdownAsset.Background.Size.Y.Offset)
-	end)
+	end)]]
 
 	local function SetOptionState(Option,Toggle)
 		local Selected = {}
@@ -1223,54 +1224,54 @@ function Bracket:Window(Window)
 		Tab.Name = GetType(Tab.Name,"Tab","string")
 		local ChooseTab = InitTab(Bracket.ScreenAsset,WindowAsset,Window,Tab)
 
-		function Tab:AddConfigSection(Side)
+		function Tab:AddConfigSection(PFName,Side)
 			local ConfigSection = Tab:Section({Name = "Configs",Side = Side}) do
-				local ConfigList, ConfigDropdown = ConfigsToList(), nil
+				local ConfigList, ConfigDropdown = ConfigsToList(PFName), nil
 				local function UpdateList(Name)
 					ConfigDropdown:Clear()
-					ConfigList = ConfigsToList()
+					ConfigList = ConfigsToList(PFName)
 					ConfigDropdown:BulkAdd(ConfigList)
 					ConfigDropdown:SetValue({Name or (ConfigList[1] and ConfigList[1].Name) or nil})
 				end
 
 				ConfigSection:Textbox({Name = "Create",IgnoreFlag = true,
 					AutoClear = true,Placeholder = "Name",Callback = function(Text)
-						Window:SaveConfig(Text)
+						Window:SaveConfig(PFName,Text)
 						UpdateList(Text)
 					end})
 				ConfigDropdown = ConfigSection:Dropdown({Name = "List",IgnoreFlag = true,
 					List = ConfigList})
 				ConfigSection:Button({Name = "Save",Callback = function()
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
-						Window:SaveConfig(ConfigDropdown.Value[1])
+						Window:SaveConfig(PFName,ConfigDropdown.Value[1])
 					end
 				end})
 				ConfigSection:Button({Name = "Load",Callback = function()
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
-						Window:LoadConfig(ConfigDropdown.Value[1])
+						Window:LoadConfig(PFName,ConfigDropdown.Value[1])
 					end
 				end})
 				ConfigSection:Button({Name = "Delete",Callback = function()
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
-						Window:DeleteConfig(ConfigDropdown.Value[1])
+						Window:DeleteConfig(PFName,ConfigDropdown.Value[1])
 						UpdateList()
 					end
 				end})
 
-				local DefaultConfig = Window:GetDefaultConfig()
+				local DefaultConfig = Window:GetDefaultConfig(PFName)
 				local ConfigDivider = ConfigSection:Divider({Text = DefaultConfig
 					and "Default Config\n<font color=\"rgb(189,189,189)\">[ "..DefaultConfig.." ]</font>"
 					or "Default Config"})
 				ConfigSection:Button({Name = "Set",Callback = function()
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
 						DefaultConfig = ConfigDropdown.Value[1]
-						writefile("Parvus\\DefaultConfig.txt",DefaultConfig)
+						writefile(PFName.."\\DefaultConfig.txt",DefaultConfig)
 						ConfigDivider:SetText(
 							"Default Config\n<font color=\"rgb(189,189,189)\">[ "..DefaultConfig.." ]</font>")
 					end
 				end})
 				ConfigSection:Button({Name = "Clear",Callback = function()
-					writefile("Parvus\\DefaultConfig.txt","")
+					writefile(PFName.."\\DefaultConfig.txt","")
 					ConfigDivider:SetText("Default Config")
 				end})
 			end
@@ -1331,8 +1332,8 @@ function Bracket:Window(Window)
 			Textbox.Flag = GetType(Textbox.Flag,Textbox.Name,"string")
 
 			Textbox.Value = GetType(Textbox.Value,"","string")
+			Textbox.NumbersOnly = GetType(Textbox.NumbersOnly,false,"boolean")
 			Textbox.Placeholder = GetType(Textbox.Placeholder,"Input here","string")
-			--Textbox.NumbersOnly = GetType(Textbox.NumbersOnly,false,"boolean")
 			Textbox.Callback = GetType(Textbox.Callback,function() end,"function")
 			Window.Elements[#Window.Elements + 1] = Textbox
 			Window.Flags[Textbox.Flag] = Textbox.Value
@@ -1346,7 +1347,7 @@ function Bracket:Window(Window)
 			Keybind.Flag = GetType(Keybind.Flag,Keybind.Name,"string")
 
 			Keybind.Value = GetType(Keybind.Value,"NONE","string")
-			--Keybind.Mouse = GetType(Keybind.Mouse,false,"boolean")
+			Keybind.Mouse = GetType(Keybind.Mouse,false,"boolean")
 			Keybind.Callback = GetType(Keybind.Callback,function() end,"function")
 			Keybind.Blacklist = GetType(Keybind.Blacklist,{"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"},"table")
 			Window.Elements[#Window.Elements + 1] = Keybind
@@ -1361,6 +1362,7 @@ function Bracket:Window(Window)
 			Dropdown.Flag = GetType(Dropdown.Flag,Dropdown.Name,"string")
 			Dropdown.List = GetType(Dropdown.List,{},"table")
 			Window.Elements[#Window.Elements + 1] = Dropdown
+			Window.Flags[Dropdown.Flag] = Dropdown.Value
 
 			InitDropdown(ChooseTab(Dropdown.Side),Bracket.ScreenAsset,Window,Dropdown)
 			return Dropdown
@@ -1438,8 +1440,8 @@ function Bracket:Window(Window)
 				Textbox.Flag = GetType(Textbox.Flag,Textbox.Name,"string")
 
 				Textbox.Value = GetType(Textbox.Value,"","string")
+				Textbox.NumbersOnly = GetType(Textbox.NumbersOnly,false,"boolean")
 				Textbox.Placeholder = GetType(Textbox.Placeholder,"Input here","string")
-				--Textbox.NumbersOnly = GetType(Textbox.NumbersOnly,false,"boolean")
 				Textbox.Callback = GetType(Textbox.Callback,function() end,"function")
 				Window.Elements[#Window.Elements + 1] = Textbox
 				Window.Flags[Textbox.Flag] = Textbox.Value
@@ -1453,7 +1455,7 @@ function Bracket:Window(Window)
 				Keybind.Flag = GetType(Keybind.Flag,Keybind.Name,"string")
 
 				Keybind.Value = GetType(Keybind.Value,"NONE","string")
-				--Keybind.Mouse = GetType(Keybind.Mouse,false,"boolean")
+				Keybind.Mouse = GetType(Keybind.Mouse,false,"boolean")
 				Keybind.Callback = GetType(Keybind.Callback,function() end,"function")
 				Keybind.Blacklist = GetType(Keybind.Blacklist,{"W","A","S","D","Slash","Tab","Backspace","Escape","Space","Delete","Unknown","Backquote"},"table")
 				Window.Elements[#Window.Elements + 1] = Keybind
@@ -1468,6 +1470,7 @@ function Bracket:Window(Window)
 				Dropdown.Flag = GetType(Dropdown.Flag,Dropdown.Name,"string")
 				Dropdown.List = GetType(Dropdown.List,{},"table")
 				Window.Elements[#Window.Elements + 1] = Dropdown
+				Window.Flags[Dropdown.Flag] = Dropdown.Value
 
 				InitDropdown(SectionContainer,Bracket.ScreenAsset,Window,Dropdown)
 				return Dropdown
@@ -1564,8 +1567,8 @@ function Bracket:Notification2(Notification)
 	end
 
 	TweenSize(NotificationAsset.Main.Size.X.Offset + 4,
-		NotificationAsset.Main.Size.Y.Offset + 4,function()
-		task.wait(Notification.Duration)TweenSize(0,
+	NotificationAsset.Main.Size.Y.Offset + 4,function()
+		task.wait(Notification.Duration) TweenSize(0,
 		NotificationAsset.Main.Size.Y.Offset + 4,function()
 			if Notification.Callback then
 				Notification.Callback()
