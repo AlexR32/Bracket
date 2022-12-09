@@ -968,11 +968,11 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 		DropdownAsset.Background.Position = UDim2.new(0.5,0,0,DropdownAsset.Title.Size.Y.Offset)
 		DropdownAsset.Size = UDim2.new(1,0,0,DropdownAsset.Title.Size.Y.Offset + DropdownAsset.Background.Size.Y.Offset)
 	end)
-	DropdownAsset.Background.Value:GetPropertyChangedSignal("TextBounds"):Connect(function()
+	--[[DropdownAsset.Background.Value:GetPropertyChangedSignal("TextBounds"):Connect(function()
 		DropdownAsset.Background.Size = UDim2.new(1,0,0,DropdownAsset.Background.Value.TextBounds.Y + 2)
 		DropdownAsset.Size = UDim2.new(1,0,0,DropdownAsset.Title.Size.Y.Offset + DropdownAsset.Background.Size.Y.Offset)
-	end)
-
+	end)]]
+	
 	local function SetOptionState(Option,Toggle)
 		local Selected = {}
 
@@ -1625,6 +1625,7 @@ function Bracket:Window(Window)
 			Dropdown.Flag = GetType(Dropdown.Flag,Dropdown.Name,"string")
 			Dropdown.List = GetType(Dropdown.List,{},"table")
 			Window.Elements[#Window.Elements + 1] = Dropdown
+			Window.Flags[Dropdown.Flag] = Dropdown.Value
 
 			Assets:Dropdown(ChooseTab(Dropdown.Side),Bracket.ScreenAsset,Window,Dropdown)
 			return Dropdown
@@ -1760,6 +1761,7 @@ function Bracket:Window(Window)
 				Dropdown.Flag = GetType(Dropdown.Flag,Dropdown.Name,"string")
 				Dropdown.List = GetType(Dropdown.List,{},"table")
 				Window.Elements[#Window.Elements + 1] = Dropdown
+				Window.Flags[Dropdown.Flag] = Dropdown.Value
 
 				Assets:Dropdown(SectionContainer,Bracket.ScreenAsset,Window,Dropdown)
 				return Dropdown
