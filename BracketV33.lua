@@ -1030,15 +1030,15 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 			OptionAsset.Size = UDim2.new(1,0,0,OptionAsset.Title.TextBounds.Y + 2)
 			OptionAsset.Layout.Size = UDim2.new(1,-OptionAsset.Title.TextBounds.X - 22,1,0)
 		end)
-		
+
 		for Index,Value in pairs(Option) do
 			if string.find(Index,"Colorpicker") then
-				Option.Colorpicker = GetType(Option[Index],{},"table")
-				Option.Colorpicker.Flag = GetType(Option[Index].Flag,
+				Option[Index] = GetType(Option[Index],{},"table")
+				Option[Index].Flag = GetType(Option[Index].Flag,
 					Dropdown.Flag.."/"..Option.Name.."/Colorpicker","string")
 
-				Option.Colorpicker.Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
-				Option.Colorpicker.Callback = GetType(Option[Index].Callback,function() end,"function")
+				Option[Index].Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
+				Option[Index].Callback = GetType(Option[Index].Callback,function() end,"function")
 				Window.Elements[#Window.Elements + 1] = Option[Index]
 				Window.Flags[Option[Index].Flag] = Option[Index].Value
 
@@ -1067,15 +1067,15 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 			OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
 				OptionAsset.Size = UDim2.new(1,0,0,OptionAsset.Title.TextBounds.Y + 2)
 			end)
-			
+
 			for Index,Value in pairs(Option) do
 				if string.find(Index,"Colorpicker") then
-					Option.Colorpicker = GetType(Option[Index],{},"table")
-					Option.Colorpicker.Flag = GetType(Option[Index].Flag,
+					Option[Index] = GetType(Option[Index],{},"table")
+					Option[Index].Flag = GetType(Option[Index].Flag,
 						Dropdown.Flag.."/"..Option.Name.."/Colorpicker","string")
 
-					Option.Colorpicker.Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
-					Option.Colorpicker.Callback = GetType(Option[Index].Callback,function() end,"function")
+					Option[Index].Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
+					Option[Index].Callback = GetType(Option[Index].Callback,function() end,"function")
 					Window.Elements[#Window.Elements + 1] = Option[Index]
 					Window.Flags[Option[Index].Flag] = Option[Index].Value
 
@@ -1584,7 +1584,7 @@ function Bracket:Window(Window)
 				Window.Flags[Keybind.Flag] = Keybind.Value
 
 				Assets:ToggleKeybind(ToggleAsset,Bracket.ScreenAsset,Window,Keybind,Toggle)
-				return Keybind
+				return Toggle
 			end
 			function Toggle:Colorpicker(Colorpicker)
 				Colorpicker = GetType(Colorpicker,{},"table")
@@ -1596,7 +1596,7 @@ function Bracket:Window(Window)
 				Window.Flags[Colorpicker.Flag] = Colorpicker.Value
 
 				Assets:ToggleColorpicker(ToggleAsset,Bracket.ScreenAsset,Window,Colorpicker)
-				return Colorpicker
+				return Toggle
 			end
 			return Toggle
 		end
@@ -1721,7 +1721,7 @@ function Bracket:Window(Window)
 					Window.Flags[Keybind.Flag] = Keybind.Value
 
 					Assets:ToggleKeybind(ToggleAsset,Bracket.ScreenAsset,Window,Keybind,Toggle)
-					return Keybind
+					return Toggle
 				end
 				function Toggle:Colorpicker(Colorpicker)
 					Colorpicker = GetType(Colorpicker,{},"table")
@@ -1733,7 +1733,7 @@ function Bracket:Window(Window)
 					Window.Flags[Colorpicker.Flag] = Colorpicker.Value
 
 					Assets:ToggleColorpicker(ToggleAsset,Bracket.ScreenAsset,Window,Colorpicker)
-					return Colorpicker
+					return Toggle
 				end
 				return Toggle
 			end
