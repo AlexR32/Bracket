@@ -981,7 +981,7 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 			for Index, Option in pairs(Dropdown.List) do
 				if Option.Mode == "Button" then
 					if Option.Instance then
-						Option.Instance.BorderColor3 = Color3.fromRGB(60,60,60)
+						Option.Instance.Tick.BackgroundColor3 = Color3.fromRGB(60,60,60)
 					end
 					Option.Value = false
 				end
@@ -992,7 +992,7 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 			Option.Value = Toggle
 		end
 
-		Option.Instance.BorderColor3 = Option.Value
+		Option.Instance.Tick.BackgroundColor3 = Option.Value
 			and Window.Color or Color3.fromRGB(60,60,60)
 
 		-- Selected Setting
@@ -1022,13 +1022,29 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 		OptionAsset.Title.Text = Option.Name
 		Option.Instance = OptionAsset
 
-		table.insert(Window.Colorable, OptionAsset)
+		table.insert(Window.Colorable, OptionAsset.Tick)
 		OptionAsset.MouseButton1Click:Connect(function()
 			SetOptionState(Option,not Option.Value)
 		end)
 		OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
 			OptionAsset.Size = UDim2.new(1,0,0,OptionAsset.Title.TextBounds.Y + 2)
+			OptionAsset.Layout.Size = UDim2.new(1,-OptionAsset.Title.TextBounds.X - 22,1,0)
 		end)
+		
+		for Index,Value in pairs(Option) do
+			if string.find(Index,"Colorpicker") then
+				Option.Colorpicker = GetType(Option[Index],{},"table")
+				Option.Colorpicker.Flag = GetType(Option[Index].Flag,
+					Dropdown.Flag.."/"..Option.Name.."/Colorpicker","string")
+
+				Option.Colorpicker.Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
+				Option.Colorpicker.Callback = GetType(Option[Index].Callback,function() end,"function")
+				Window.Elements[#Window.Elements + 1] = Option[Index]
+				Window.Flags[Option[Index].Flag] = Option[Index].Value
+
+				Assets:ToggleColorpicker(OptionAsset,ScreenAsset,Window,Option[Index])
+			end
+		end
 	end
 	for Index, Option in pairs(Dropdown.List) do
 		if Option.Value then
@@ -1051,6 +1067,21 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 			OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
 				OptionAsset.Size = UDim2.new(1,0,0,OptionAsset.Title.TextBounds.Y + 2)
 			end)
+			
+			for Index,Value in pairs(Option) do
+				if string.find(Index,"Colorpicker") then
+					Option.Colorpicker = GetType(Option[Index],{},"table")
+					Option.Colorpicker.Flag = GetType(Option[Index].Flag,
+						Dropdown.Flag.."/"..Option.Name.."/Colorpicker","string")
+
+					Option.Colorpicker.Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
+					Option.Colorpicker.Callback = GetType(Option[Index].Callback,function() end,"function")
+					Window.Elements[#Window.Elements + 1] = Option[Index]
+					Window.Flags[Option[Index].Flag] = Option[Index].Value
+
+					Assets:ToggleColorpicker(OptionAsset,ScreenAsset,Window,Option[Index])
+				end
+			end
 		end
 		for Index, Option in pairs(Dropdown.List) do
 			if Option.Value then
