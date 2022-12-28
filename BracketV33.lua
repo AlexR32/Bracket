@@ -25,6 +25,9 @@ local function TableToColor(Table)
     if type(Table) ~= "table" then return Table end
     return Color3.fromHSV(Table[1],Table[2],Table[3])
 end
+local function ColorToString(Color)
+    return math.round(Color.R * 255) .. "," .. math.round(Color.G * 255) .. "," .. math.round(Color.B * 255)
+end
 local function Scale(Value,InputMin,InputMax,OutputMin,OutputMax)
     return OutputMin + (Value - InputMin) * (OutputMax - OutputMin) / (InputMax - InputMin)
 end
@@ -129,25 +132,25 @@ end
 
 local function InitSnowflakes(WindowAsset)
     local ParticleEmitter = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/AlexR32/rParticle/master/ParticleEmitter.lua"))()
-	local Emitter = ParticleEmitter.new(WindowAsset.Background,WindowAsset.Snowflake)
-	local random = Random.new() Emitter.rate = 20
+    local Emitter = ParticleEmitter.new(WindowAsset.Background,WindowAsset.Snowflake)
+    local random = Random.new() Emitter.rate = 20
 
-	Emitter.onSpawn = function(particle)
-		local randomPosition = random:NextNumber()
-		local randomSize = random:NextInteger(10,50)
-		local randomYVelocity = random:NextInteger(10,50)
-		local randomXVelocity = random:NextInteger(-50,50)
+    Emitter.onSpawn = function(particle)
+        local randomPosition = random:NextNumber()
+        local randomSize = random:NextInteger(10,50)
+        local randomYVelocity = random:NextInteger(10,50)
+        local randomXVelocity = random:NextInteger(-50,50)
 
-		particle.element.ImageTransparency = randomSize / 50
-		particle.element.Size = UDim2.fromOffset(randomSize,randomSize)
-		particle.velocity = Vector2.new(randomXVelocity,randomYVelocity)
-		particle.position = Vector2.new(randomPosition * WindowAsset.Background.AbsoluteSize.X,0)
-		particle.maxAge = 50 particle.element.Visible = true
-	end
+        particle.element.ImageTransparency = randomSize / 50
+        particle.element.Size = UDim2.fromOffset(randomSize,randomSize)
+        particle.velocity = Vector2.new(randomXVelocity,randomYVelocity)
+        particle.position = Vector2.new(randomPosition * WindowAsset.Background.AbsoluteSize.X,0)
+        particle.maxAge = 50 particle.element.Visible = true
+    end
 
-	Emitter.onUpdate = function(particle,deltaTime)
-		particle.position += particle.velocity * deltaTime
-	end
+    Emitter.onUpdate = function(particle,deltaTime)
+        particle.position += particle.velocity * deltaTime
+    end
 end
 
 local function ChooseTab(ScreenAsset,TabButtonAsset,TabAsset)
@@ -979,11 +982,8 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         end
 
         -- Dropdown Title Setting
-        if #Selected == 0 then
-            DropdownAsset.Background.Value.Text = "..."
-        else
-            DropdownAsset.Background.Value.Text = table.concat(Selected,", ")
-        end
+        DropdownAsset.Background.Value.Text = #Selected == 0
+        and "..." or table.concat(Selected,", ")
 
         Dropdown.Value = Selected
         if Option.Callback then
@@ -991,8 +991,7 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         end
         Window.Flags[Dropdown.Flag] = Dropdown.Value
     end
-
-    for Index, Option in pairs(Dropdown.List) do
+    local function AddOption(Option)
         local OptionAsset = GetAsset("Dropdown/Option")
         OptionAsset.Parent = OptionContainerAsset
         OptionAsset.Title.Text = Option.Name
@@ -1022,6 +1021,10 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
             end
         end
     end
+
+    for Index,Option in pairs(Dropdown.List) do
+        AddOption(Option)
+    end
     for Index, Option in pairs(Dropdown.List) do
         if Option.Value then
             SetOptionState(Option,Option.Value)
@@ -1030,39 +1033,18 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 
     function Dropdown:BulkAdd(Table)
         for Index,Option in pairs(Table) do
-            local OptionAsset = GetAsset("Dropdown/Option")
-            OptionAsset.Parent = OptionContainerAsset
-            OptionAsset.Title.Text = Option.Name
-            Option.Instance = OptionAsset
-
-            table.insert(Window.Colorable, OptionAsset)
-            table.insert(Dropdown.List,Option)
-            OptionAsset.MouseButton1Click:Connect(function()
-                SetOptionState(Option,not Option.Value)
-            end)
-            OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-                OptionAsset.Size = UDim2.new(1,0,0,OptionAsset.Title.TextBounds.Y + 2)
-            end)
-
-            for Index,Value in pairs(Option) do
-                if string.find(Index,"Colorpicker") then
-                    Option[Index] = GetType(Option[Index],{},"table",true)
-                    Option[Index].Flag = GetType(Option[Index].Flag,
-                        Dropdown.Flag.."/"..Option.Name.."/Colorpicker","string")
-
-                    Option[Index].Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
-                    Option[Index].Callback = GetType(Option[Index].Callback,function() end,"function")
-                    Window.Elements[#Window.Elements + 1] = Option[Index]
-                    Window.Flags[Option[Index].Flag] = Option[Index].Value
-
-                    Assets:ToggleColorpicker(OptionAsset,ScreenAsset,Window,Option[Index])
-                end
-            end
+            AddOption(Option)
         end
-        for Index, Option in pairs(Dropdown.List) do
+        for Index,Option in pairs(Dropdown.List) do
             if Option.Value then
                 SetOptionState(Option,Option.Value)
             end
+        end
+    end
+    function Dropdown:AddOption(Option)
+        AddOption(Option)
+        if Option.Value then
+            SetOptionState(Option,Option.Value)
         end
     end
     function Dropdown:RemoveOption(Name)
@@ -1109,14 +1091,10 @@ function Assets:Colorpicker(Parent,ScreenAsset,Window,Colorpicker)
     ColorpickerAsset.Title.Text = Colorpicker.Name
     PaletteAsset.Parent = ScreenAsset
 
-    local PaletteRender = nil
-    local SVRender = nil
-    local HueRender = nil
-    local AlphaRender = nil
-
-    local function FormatToString(Color)
-        return math.round(Color.R * 255) .. "," .. math.round(Color.G * 255) .. "," .. math.round(Color.B * 255)
-    end
+    table.insert(Window.Colorable,PaletteAsset.Rainbow.Tick)
+    local PaletteRender,SVRender,HueRender,AlphaRender = nil,nil,nil,nil
+    PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5]
+    and Window.Color or Color3.fromRGB(60,60,60)
 
     local function Update()
         Colorpicker.Value[6] = TableToColor(Colorpicker.Value)
@@ -1129,15 +1107,19 @@ function Assets:Colorpicker(Parent,ScreenAsset,Window,Colorpicker)
         PaletteAsset.Alpha.Value.Text = Colorpicker.Value[4]
         PaletteAsset.Alpha.BackgroundColor3 = Colorpicker.Value[6]
 
-        PaletteAsset.RGB.RGBBox.PlaceholderText = FormatToString(Colorpicker.Value[6])
+        PaletteAsset.RGB.RGBBox.PlaceholderText = ColorToString(Colorpicker.Value[6])
         PaletteAsset.HEX.HEXBox.PlaceholderText = Colorpicker.Value[6]:ToHex()
         Window.Flags[Colorpicker.Flag] = Colorpicker.Value
         Colorpicker.Callback(Colorpicker.Value,Colorpicker.Value[6])
-    end
-    Update()
+    end Update()
 
     ColorpickerAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
         ColorpickerAsset.Size = UDim2.new(1,0,0,ColorpickerAsset.Title.TextBounds.Y)
+    end)
+
+    PaletteAsset.Rainbow.MouseButton1Click:Connect(function()
+        Colorpicker.Value[5] = not Colorpicker.Value[5]
+        PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5] and Window.Color or Color3.fromRGB(60,60,60)
     end)
     ColorpickerAsset.MouseButton1Click:Connect(function()
         if not PaletteAsset.Visible then
@@ -1218,42 +1200,6 @@ function Assets:Colorpicker(Parent,ScreenAsset,Window,Colorpicker)
         end
     end)
 
-    function Colorpicker:SetName(Name)
-        Colorpicker.Name = Name
-        ColorpickerAsset.Title.Text = Name
-    end
-    function Colorpicker:SetCallback(Callback)
-        Colorpicker.Callback = Callback
-    end
-    function Colorpicker:SetValue(HSVAR)
-        Colorpicker.Value = HSVAR
-        Update()
-    end
-    function Colorpicker:ToolTip(Text)
-        Assets:ToolTip(ColorpickerAsset,ScreenAsset,Text)
-    end
-
-    table.insert(Window.Colorable,PaletteAsset.Rainbow.Tick)
-    PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5] and Window.Color or Color3.fromRGB(60,60,60)
-    PaletteAsset.Rainbow.MouseButton1Click:Connect(function()
-        Colorpicker.Value[5] = not Colorpicker.Value[5]
-        PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5] and Window.Color or Color3.fromRGB(60,60,60)
-    end)
-    RunService.Heartbeat:Connect(function()
-        if Colorpicker.Value[5] then
-            if PaletteAsset.Visible then
-                Colorpicker.Value[1] = Window.RainbowHue
-                Update()
-            else 
-                Colorpicker.Value[1] = Window.RainbowHue
-                Colorpicker.Value[6] = TableToColor(Colorpicker.Value)
-                ColorpickerAsset.Color.BackgroundColor3 = Colorpicker.Value[6]
-                Window.Flags[Colorpicker.Flag] = Colorpicker.Value
-                Colorpicker.Callback(Colorpicker.Value,Colorpicker.Value[6])
-            end
-        end
-    end)
-
     PaletteAsset.RGB.RGBBox.FocusLost:Connect(function(Enter)
         if not Enter then return end
         local ColorString = string.split(string.gsub(PaletteAsset.RGB.RGBBox.Text," ",""),",")
@@ -1273,6 +1219,33 @@ function Assets:Colorpicker(Parent,ScreenAsset,Window,Colorpicker)
         Colorpicker.Value[3] = Value
         Update()
     end)
+
+    RunService.Heartbeat:Connect(function()
+        if Colorpicker.Value[5] then
+            if PaletteAsset.Visible then
+                Colorpicker.Value[1] = Window.RainbowHue
+                Update()
+            else 
+                Colorpicker.Value[1] = Window.RainbowHue
+                Colorpicker.Value[6] = TableToColor(Colorpicker.Value)
+                ColorpickerAsset.Color.BackgroundColor3 = Colorpicker.Value[6]
+                Window.Flags[Colorpicker.Flag] = Colorpicker.Value
+                Colorpicker.Callback(Colorpicker.Value,Colorpicker.Value[6])
+            end
+        end
+    end)
+
+    Colorpicker:GetPropertyChangedSignal("Name"):Connect(function(Name)
+        ColorpickerAsset.Title.Text = Name
+    end)
+
+    function Colorpicker:SetValue(HSVAR)
+        Colorpicker.Value = HSVAR
+        Update()
+    end
+    function Colorpicker:ToolTip(Text)
+        Assets:ToolTip(ColorpickerAsset,ScreenAsset,Text)
+    end
 end
 function Assets:ToggleColorpicker(Parent,ScreenAsset,Window,Colorpicker)
     local ColorpickerAsset = GetAsset("Colorpicker/TColorpicker")
@@ -1280,14 +1253,10 @@ function Assets:ToggleColorpicker(Parent,ScreenAsset,Window,Colorpicker)
     ColorpickerAsset.Parent = Parent.Layout
     PaletteAsset.Parent = ScreenAsset
 
-    local PaletteRender = nil
-    local SVRender = nil
-    local HueRender = nil
-    local AlphaRender = nil
-
-    local function FormatToString(Color)
-        return math.round(Color.R * 255) .. "," .. math.round(Color.G * 255) .. "," .. math.round(Color.B * 255)
-    end
+    table.insert(Window.Colorable,PaletteAsset.Rainbow.Tick)
+    local PaletteRender,SVRender,HueRender,AlphaRender = nil,nil,nil,nil
+    PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5]
+    and Window.Color or Color3.fromRGB(60,60,60)
 
     local function Update()
         Colorpicker.Value[6] = TableToColor(Colorpicker.Value)
@@ -1300,13 +1269,16 @@ function Assets:ToggleColorpicker(Parent,ScreenAsset,Window,Colorpicker)
         PaletteAsset.Alpha.Value.Text = Colorpicker.Value[4]
         PaletteAsset.Alpha.BackgroundColor3 = Colorpicker.Value[6]
 
-        PaletteAsset.RGB.RGBBox.PlaceholderText = FormatToString(Colorpicker.Value[6])
+        PaletteAsset.RGB.RGBBox.PlaceholderText = ColorToString(Colorpicker.Value[6])
         PaletteAsset.HEX.HEXBox.PlaceholderText = Colorpicker.Value[6]:ToHex()
         Window.Flags[Colorpicker.Flag] = Colorpicker.Value
         Colorpicker.Callback(Colorpicker.Value,Colorpicker.Value[6])
-    end
-    Update()
+    end Update()
 
+    PaletteAsset.Rainbow.MouseButton1Click:Connect(function()
+        Colorpicker.Value[5] = not Colorpicker.Value[5]
+        PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5] and Window.Color or Color3.fromRGB(60,60,60)
+    end)
     ColorpickerAsset.MouseButton1Click:Connect(function()
         if not PaletteAsset.Visible then
             PaletteAsset.Visible = true
@@ -1386,35 +1358,6 @@ function Assets:ToggleColorpicker(Parent,ScreenAsset,Window,Colorpicker)
         end
     end)
 
-    function Colorpicker:SetCallback(Callback)
-        Colorpicker.Callback = Callback
-    end
-    function Colorpicker:SetValue(HSVAR)
-        Colorpicker.Value = HSVAR
-        Update()
-    end
-
-    table.insert(Window.Colorable,PaletteAsset.Rainbow.Tick)
-    PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5] and Window.Color or Color3.fromRGB(60,60,60)
-    PaletteAsset.Rainbow.MouseButton1Click:Connect(function()
-        Colorpicker.Value[5] = not Colorpicker.Value[5]
-        PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5] and Window.Color or Color3.fromRGB(60,60,60)
-    end)
-    RunService.Heartbeat:Connect(function()
-        if Colorpicker.Value[5] then
-            if PaletteAsset.Visible then
-                Colorpicker.Value[1] = Window.RainbowHue
-                Update()
-            else 
-                Colorpicker.Value[1] = Window.RainbowHue
-                Colorpicker.Value[6] = TableToColor(Colorpicker.Value)
-                ColorpickerAsset.BackgroundColor3 = Colorpicker.Value[6]
-                Window.Flags[Colorpicker.Flag] = Colorpicker.Value
-                Colorpicker.Callback(Colorpicker.Value,Colorpicker.Value[6])
-            end
-        end
-    end)
-
     PaletteAsset.RGB.RGBBox.FocusLost:Connect(function(Enter)
         if not Enter then return end
         local ColorString = string.split(string.gsub(PaletteAsset.RGB.RGBBox.Text," ",""),",")
@@ -1434,6 +1377,26 @@ function Assets:ToggleColorpicker(Parent,ScreenAsset,Window,Colorpicker)
         Colorpicker.Value[3] = Value
         Update()
     end)
+
+    RunService.Heartbeat:Connect(function()
+        if Colorpicker.Value[5] then
+            if PaletteAsset.Visible then
+                Colorpicker.Value[1] = Window.RainbowHue
+                Update()
+            else 
+                Colorpicker.Value[1] = Window.RainbowHue
+                Colorpicker.Value[6] = TableToColor(Colorpicker.Value)
+                ColorpickerAsset.BackgroundColor3 = Colorpicker.Value[6]
+                Window.Flags[Colorpicker.Flag] = Colorpicker.Value
+                Colorpicker.Callback(Colorpicker.Value,Colorpicker.Value[6])
+            end
+        end
+    end)
+
+    function Colorpicker:SetValue(HSVAR)
+        Colorpicker.Value = HSVAR
+        Update()
+    end
 end
 
 local Bracket = Assets:Screen()
@@ -1445,8 +1408,8 @@ function Bracket:Window(Window)
     Window.Position = GetType(Window.Position,UDim2.new(0.5,-248,0.5,-248),"UDim2")
     Window.Enabled = GetType(Window.Enabled,true,"boolean")
 
-    Window.RainbowHue = 0 Window.Colorable = {}
-    Window.Elements = {} Window.Flags = {}
+    Window.RainbowHue = 0
+    Window.Colorable = {} Window.Elements = {} Window.Flags = {}
     local WindowAsset = Assets:Window(Bracket.ScreenAsset,Window)
 
     function Window:Tab(Tab)
