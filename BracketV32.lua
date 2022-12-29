@@ -6,7 +6,7 @@ local RunService = game:GetService("RunService")
 local PlayerService = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 
-local Debug,LocalPlayer = true,PlayerService.LocalPlayer
+local Debug,LocalPlayer = false,PlayerService.LocalPlayer
 local MainAssetFolder = Debug and ReplicatedStorage.BracketV32
     or InsertService:LoadLocalAsset("rbxassetid://9153139105")
 
