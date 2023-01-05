@@ -270,6 +270,9 @@ function Assets:Window(ScreenAsset,Window)
             end
         end
     end)
+    Window:GetPropertyChangedSignal("Blur"):Connect(function(Blur)
+        if not Debug then RunService:SetRobloxGuiFocused(Window.Enabled and Blur) end
+    end)
     Window:GetPropertyChangedSignal("Name"):Connect(function(Name)
         WindowAsset.Title.Text = Name
     end)
@@ -1085,7 +1088,9 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         Dropdown.List[Index] = AddOption(Option,false,Index)
     end
     for Index,Option in pairs(Dropdown.List) do
-        Option.Value = Option.Value
+        if Option.Value then
+            Option.Value = Option.Value
+        end
     end RefreshSelected()
 
     function Dropdown:BulkAdd(Table)
