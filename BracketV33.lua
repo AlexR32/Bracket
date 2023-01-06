@@ -57,11 +57,13 @@ local function Proxify(Table) local Proxy,Events = {},{}
             return Table[Key]
         end,
         __newindex = function(Self,Key,Value)
+            local OldValue = Table[Key]
             Table[Key] = Value
-            ChangedEvent:Fire(Key,Value)
+
+            ChangedEvent:Fire(Key,Value,OldValue)
             if Events[Key] then
                 for Index,Event in ipairs(Events[Key]) do
-                    Event:Fire(Value)
+                    Event:Fire(Value,OldValue)
                 end
             end
         end
@@ -161,7 +163,16 @@ local function ChooseTab(ScreenAsset,TabButtonAsset,TabAsset)
     end
 end
 local function GetLongestSide(TabAsset)
-    if TabAsset.LeftSide.ListLayout.AbsoluteContentSize.Y > TabAsset.RightSide.ListLayout.AbsoluteContentSize.Y then
+    if TabAsset.LeftSide.ListLayout.AbsoluteContentSize.Y >=
+    TabAsset.RightSide.ListLayout.AbsoluteContentSize.Y then
+        return TabAsset.LeftSide
+    else
+        return TabAsset.RightSide
+    end
+end
+local function GetShortestSide(TabAsset)
+    if TabAsset.LeftSide.ListLayout.AbsoluteContentSize.Y <=
+    TabAsset.RightSide.ListLayout.AbsoluteContentSize.Y then
         return TabAsset.LeftSide
     else
         return TabAsset.RightSide
@@ -173,7 +184,7 @@ local function ChooseTabSide(TabAsset,Mode)
     elseif Mode == "Right" then
         return TabAsset.RightSide
     else
-        return GetLongestSide(TabAsset)
+        return GetShortestSide(TabAsset)
     end
 end
 
@@ -426,18 +437,12 @@ function Assets:Tab(ScreenAsset,WindowAsset,Window,Tab)
     Window.Colorable[TabButtonAsset.Highlight] = Tab.ColorConfig
 
     TabAsset.LeftSide.ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        if ChooseTabSide(TabAsset,"Longest") == TabAsset.LeftSide then
-            TabAsset.CanvasSize = UDim2.new(0,0,0,TabAsset.LeftSide.ListLayout.AbsoluteContentSize.Y + 21)
-        else
-            TabAsset.CanvasSize = UDim2.new(0,0,0,TabAsset.RightSide.ListLayout.AbsoluteContentSize.Y + 21)
-        end
+        local Side = GetLongestSide(TabAsset)
+        TabAsset.CanvasSize = UDim2.new(0,0,0,Side.ListLayout.AbsoluteContentSize.Y + 21)
     end)
     TabAsset.RightSide.ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        if ChooseTabSide(TabAsset,"Longest") == TabAsset.LeftSide then
-            TabAsset.CanvasSize = UDim2.new(0,0,0,TabAsset.LeftSide.ListLayout.AbsoluteContentSize.Y + 21)
-        else
-            TabAsset.CanvasSize = UDim2.new(0,0,0,TabAsset.RightSide.ListLayout.AbsoluteContentSize.Y + 21)
-        end
+        local Side = GetLongestSide(TabAsset)
+        TabAsset.CanvasSize = UDim2.new(0,0,0,Side.ListLayout.AbsoluteContentSize.Y + 21)
     end)
     TabButtonAsset.MouseButton1Click:Connect(function()
         ChooseTab(ScreenAsset,TabButtonAsset,TabAsset)
@@ -808,46 +813,43 @@ function Assets:Keybind(Parent,ScreenAsset,Window,Keybind)
     end)
 
     UserInputService.InputBegan:Connect(function(Input)
-        local Key = tostring(Input.KeyCode):gsub("Enum.KeyCode.","")
-        if Keybind.Mouse then
-            Key = tostring(Input.UserInputType):gsub("Enum.UserInputType.","")
-            if Keybind.WaitingForBind and Input.UserInputType == Enum.UserInputType.MouseButton1
-            or Keybind.WaitingForBind and Input.UserInputType == Enum.UserInputType.MouseButton2
-            or Keybind.WaitingForBind and Input.UserInputType == Enum.UserInputType.MouseButton3 then
+        local Key = Input.KeyCode.Name
+        if Keybind.WaitingForBind and Input.UserInputType.Name == "Keyboard" then
+            Keybind.Value = Key
+        elseif Input.UserInputType.Name == "Keyboard" then
+            if Key == Keybind.Value then
+                Keybind.Toggle = not Keybind.Toggle
+                Keybind.Callback(Keybind.Value,true,Keybind.Toggle)
+            end
+        end
+        if Keybind.Mouse then Key = Input.UserInputType.Name
+            if Keybind.WaitingForBind and (Key == "MouseButton1"
+            or Key == "MouseButton2" or Key == "MouseButton3") then
                 Keybind.Value = Key
-            elseif Input.UserInputType == Enum.UserInputType.MouseButton1
-                or Input.UserInputType == Enum.UserInputType.MouseButton2
-                or Input.UserInputType == Enum.UserInputType.MouseButton3 then
+            elseif Key == "MouseButton1"
+                or Key == "MouseButton2"
+                or Key == "MouseButton3" then
                 if Key == Keybind.Value then
                     Keybind.Toggle = not Keybind.Toggle
                     Keybind.Callback(Keybind.Value,true,Keybind.Toggle)
                 end
             end
         end
-        if Keybind.WaitingForBind and Input.UserInputType == Enum.UserInputType.Keyboard then
-            Keybind.Value = Key
-        elseif Input.UserInputType == Enum.UserInputType.Keyboard then
-            if Key == Keybind.Value then
-                Keybind.Toggle = not Keybind.Toggle
-                Keybind.Callback(Keybind.Value,true,Keybind.Toggle)
-            end
-        end
     end)
     UserInputService.InputEnded:Connect(function(Input)
-        local Key = tostring(Input.KeyCode):gsub("Enum.KeyCode.","")
-        if Keybind.Mouse then
-            Key = tostring(Input.UserInputType):gsub("Enum.UserInputType.","")
-            if Input.UserInputType == Enum.UserInputType.MouseButton1
-            or Input.UserInputType == Enum.UserInputType.MouseButton2
-            or Input.UserInputType == Enum.UserInputType.MouseButton3 then
+        local Key = Input.KeyCode.Name
+        if Input.UserInputType.Name == "Keyboard" then
+            if Key == Keybind.Value then
+                Keybind.Callback(Keybind.Value,false,Keybind.Toggle)
+            end
+        end
+        if Keybind.Mouse then Key = Input.UserInputType.Name
+            if Key == "MouseButton1"
+            or Key == "MouseButton2"
+            or Key == "MouseButton3" then
                 if Key == Keybind.Value then
                     Keybind.Callback(Keybind.Value,false,Keybind.Toggle)
                 end
-            end
-        end
-        if Input.UserInputType == Enum.UserInputType.Keyboard then
-            if Key == Keybind.Value then
-                Keybind.Callback(Keybind.Value,false,Keybind.Toggle)
             end
         end
     end)
@@ -855,14 +857,21 @@ function Assets:Keybind(Parent,ScreenAsset,Window,Keybind)
     Keybind:GetPropertyChangedSignal("Name"):Connect(function(Name)
         KeybindAsset.Title.Text = Name
     end)
-    Keybind:GetPropertyChangedSignal("Value"):Connect(function(Value)
+    Keybind:GetPropertyChangedSignal("Value"):Connect(function(Value,OldValue)
         if table.find(Keybind.Blacklist,Value) then
-            if Keybind.DoNotClear then Value = Keybind.Value else Value = "NONE" end
-        end KeybindAsset.Value.Text = "[ " .. tostring(Value) .. " ]"
+            if Keybind.DoNotClear then
+                Keybind.Internal.Value = OldValue
+                Value = OldValue
+            else
+                Keybind.Internal.Value = "NONE"
+                Value = "NONE"
+            end
+        end
+        KeybindAsset.Value.Text = "[ " .. tostring(Value) .. " ]"
 
         Keybind.WaitingForBind = false
-        Window.Flags[Keybind.Flag] = Keybind.Value
-        Keybind.Callback(Keybind.Value,false,Keybind.Toggle)
+        Window.Flags[Keybind.Flag] = Value
+        Keybind.Callback(Value,false,Keybind.Toggle)
     end)
 
     --[[function Keybind:SetValue(Key)
@@ -892,59 +901,62 @@ function Assets:ToggleKeybind(Parent,ScreenAsset,Window,Keybind,Toggle)
     end)
 
     UserInputService.InputBegan:Connect(function(Input)
-        local Key = tostring(Input.KeyCode):gsub("Enum.KeyCode.","")
-        if Keybind.Mouse then
-            Key = tostring(Input.UserInputType):gsub("Enum.UserInputType.","")
-            if Keybind.WaitingForBind and
-            (Input.UserInputType == Enum.UserInputType.MouseButton1
-            or Input.UserInputType == Enum.UserInputType.MouseButton2
-            or Input.UserInputType == Enum.UserInputType.MouseButton3) then
+        local Key = Input.KeyCode.Name
+        if Keybind.WaitingForBind and Input.UserInputType.Name == "Keyboard" then
+            Keybind.Value = Key
+        elseif Input.UserInputType.Name == "Keyboard" then
+            if Key == Keybind.Value then
+                Toggle.Value = not Toggle.Value
+                Keybind.Callback(Keybind.Value,true,Toggle.Value)
+            end
+        end
+        if Keybind.Mouse then Key = Input.UserInputType.Name
+            if Keybind.WaitingForBind and (Key == "MouseButton1"
+            or Key == "MouseButton2" or Key == "MouseButton3") then
                 Keybind.Value = Key
-            elseif Input.UserInputType == Enum.UserInputType.MouseButton1
-                or Input.UserInputType == Enum.UserInputType.MouseButton2
-                or Input.UserInputType == Enum.UserInputType.MouseButton3 then
+            elseif Key == "MouseButton1"
+                or Key == "MouseButton2"
+                or Key == "MouseButton3" then
                 if Key == Keybind.Value then
                     Toggle.Value = not Toggle.Value
                     Keybind.Callback(Keybind.Value,true,Toggle.Value)
                 end
             end
         end
-        if Keybind.WaitingForBind and Input.UserInputType == Enum.UserInputType.Keyboard then
-            Keybind.Value = Key
-        elseif Input.UserInputType == Enum.UserInputType.Keyboard then
-            if Key == Keybind.Value then
-                Toggle.Value = not Toggle.Value
-                Keybind.Callback(Keybind.Value,true,Toggle.Value)
-            end
-        end
     end)
     UserInputService.InputEnded:Connect(function(Input)
-        local Key = tostring(Input.KeyCode):gsub("Enum.KeyCode.","")
-        if Keybind.Mouse then
-            Key = tostring(Input.UserInputType):gsub("Enum.UserInputType.","")
-            if Input.UserInputType == Enum.UserInputType.MouseButton1
-            or Input.UserInputType == Enum.UserInputType.MouseButton2
-            or Input.UserInputType == Enum.UserInputType.MouseButton3 then
+        local Key = Input.KeyCode.Name
+        if Input.UserInputType.Name == "Keyboard" then
+            if Key == Keybind.Value then
+                Keybind.Callback(Keybind.Value,false,Toggle.Value)
+            end
+        end
+        if Keybind.Mouse then Key = Input.UserInputType.Name
+            if Key == "MouseButton1"
+            or Key == "MouseButton2"
+            or Key == "MouseButton3" then
                 if Key == Keybind.Value then
                     Keybind.Callback(Keybind.Value,false,Toggle.Value)
                 end
             end
         end
-        if Input.UserInputType == Enum.UserInputType.Keyboard then
-            if Key == Keybind.Value then
-                Keybind.Callback(Keybind.Value,false,Toggle.Value)
-            end
-        end
     end)
 
-    Keybind:GetPropertyChangedSignal("Value"):Connect(function(Value)
+    Keybind:GetPropertyChangedSignal("Value"):Connect(function(Value,OldValue)
         if table.find(Keybind.Blacklist,Value) then
-            if Keybind.DoNotClear then Value = Keybind.Value else Value = "NONE" end
-        end KeybindAsset.Text = "[ " .. tostring(Value) .. " ]"
+            if Keybind.DoNotClear then
+                Keybind.Internal.Value = OldValue
+                Value = OldValue
+            else
+                Keybind.Internal.Value = "NONE"
+                Value = "NONE"
+            end
+        end
+        KeybindAsset.Text = "[ " .. tostring(Value) .. " ]"
 
         Keybind.WaitingForBind = false
-        Window.Flags[Keybind.Flag] = Keybind.Value
-        Keybind.Callback(Keybind.Value,false,Toggle.Value)
+        Window.Flags[Keybind.Flag] = Value
+        Keybind.Callback(Value,false,Toggle.Value)
     end)
 
     --[[function Keybind:SetValue(Key)
@@ -1084,13 +1096,11 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         return Option
     end
 
+    -- Dropdown Update
     for Index,Option in pairs(Dropdown.List) do
         Dropdown.List[Index] = AddOption(Option,false,Index)
-    end
-    for Index,Option in pairs(Dropdown.List) do
-        if Option.Value then
-            Option.Value = Option.Value
-        end
+    end for Index,Option in pairs(Dropdown.List) do
+        if Option.Value then Option.Value = true end
     end RefreshSelected()
 
     function Dropdown:BulkAdd(Table)
