@@ -1078,7 +1078,7 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
             Option.Callback(Dropdown.Selected,Option)
         end)
 
-        for Index,Value in pairs(Option) do
+        for Index,Value in pairs(Option.Internal) do
             if string.find(Index,"Colorpicker") then
                 Option[Index] = GetType(Option[Index],{},"table",true)
                 Option[Index].Flag = GetType(Option[Index].Flag,
