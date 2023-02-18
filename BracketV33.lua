@@ -386,7 +386,7 @@ function Assets:Window(ScreenAsset,Window)
 			delfile(FolderName.."\\Configs\\"..Name..".json")
 		end
 	end
-	function Window:GetALConfig(FolderName)
+	function Window:GetAutoLoadConfig(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
 		if not isfile(FolderName.."\\AutoLoads.json") then
 			writefile(FolderName.."\\AutoLoads.json","{}")
@@ -400,7 +400,7 @@ function Assets:Window(ScreenAsset,Window)
 			return AutoLoad
 		end
 	end
-	function Window:AddToAL(FolderName,Name)
+	function Window:AddToAutoLoad(FolderName,Name)
 		if not isfolder(FolderName) then makefolder(FolderName) end
 		if not isfile(FolderName.."\\AutoLoads.json") then
 			writefile(FolderName.."\\AutoLoads.json","{}")
@@ -414,7 +414,7 @@ function Assets:Window(ScreenAsset,Window)
 			HttpService:JSONEncode(AutoLoads)
 		)
 	end
-	function Window:RemoveFromAL(FolderName)
+	function Window:RemoveFromAutoLoad(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
 		if not isfile(FolderName.."\\AutoLoads.json") then
 			writefile(FolderName.."\\AutoLoads.json","{}")
@@ -429,7 +429,7 @@ function Assets:Window(ScreenAsset,Window)
 			HttpService:JSONEncode(AutoLoads)
 		)
 	end
-	function Window:LoadALConfig(FolderName)
+	function Window:AutoLoadConfig(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
 		if not isfile(FolderName.."\\AutoLoads.json") then
 			writefile(FolderName.."\\AutoLoads.json","{}")
@@ -1482,7 +1482,7 @@ function Bracket:Window(Window)
 		function Tab:AddConfigSection(FolderName,Side)
 			local ConfigSection = Tab:Section({Name = "Config System",Side = Side}) do
 				local ConfigList,ConfigDropdown = ConfigsToList(FolderName),nil
-				local ALConfig = Window:GetALConfig(FolderName)
+				local ALConfig = Window:GetAutoLoadConfig(FolderName)
 
 				local function UpdateList(Name) ConfigDropdown:Clear()
 					ConfigList = ConfigsToList(FolderName) ConfigDropdown:BulkAdd(ConfigList)
@@ -1541,7 +1541,7 @@ function Bracket:Window(Window)
 
 				ConfigSection:Button({Name = "Set AutoLoad Config",Callback = function()
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
-						Window:AddToAL(FolderName,ConfigDropdown.Value[1])
+						Window:AddToAutoLoad(FolderName,ConfigDropdown.Value[1])
 						ConfigDivider.Text = "AutoLoad Config\n<font color=\"rgb(189,189,189)\">[ "..ConfigDropdown.Value[1].." ]</font>"
 					else
 						Bracket:Notification({
@@ -1552,7 +1552,7 @@ function Bracket:Window(Window)
 					end
 				end})
 				ConfigSection:Button({Name = "Clear AutoLoad Config",Callback = function()
-					Window:RemoveFromAL(FolderName)
+					Window:RemoveFromAutoLoad(FolderName)
 					ConfigDivider.Text = "AutoLoad Config"
 				end})
 			end
