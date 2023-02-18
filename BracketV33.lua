@@ -199,12 +199,12 @@ end
 local function ConfigsToList(FolderName)
 	if not isfolder(FolderName) then makefolder(FolderName) end
 	if not isfolder(FolderName.."\\Configs") then makefolder(FolderName.."\\Configs") end
-	if not isfile(FolderName.."\\AutoLoads.json") then writefile(FolderName.."\\AutoLoads.json","{}") end
+	if not isfile(FolderName.."\\AutoLoads.json") then writefile(FolderName.."\\AutoLoads.json","[]") end
 
 	local Configs = {}
 	local AutoLoads = HttpService:JSONDecode(
 			readfile(FolderName.."\\AutoLoads.json")
-	) local AutoLoad = AutoLoads[game.GameId]
+	) local AutoLoad = AutoLoads[tostring(game.GameId)]
 
 	for Index,Config in pairs(listfiles(FolderName.."\\Configs") or {}) do
 		Config = Config:gsub(FolderName.."\\Configs\\","")
@@ -389,12 +389,12 @@ function Assets:Window(ScreenAsset,Window)
 	function Window:GetAutoLoadConfig(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
 		if not isfile(FolderName.."\\AutoLoads.json") then
-			writefile(FolderName.."\\AutoLoads.json","{}")
+			writefile(FolderName.."\\AutoLoads.json","[]")
 		end
 
 		local AutoLoads = HttpService:JSONDecode(
 			readfile(FolderName.."\\AutoLoads.json")
-		) local AutoLoad = AutoLoads[game.GameId]
+		) local AutoLoad = AutoLoads[tostring(game.GameId)]
 
 		if table.find(GetConfigs(FolderName),AutoLoad) then
 			return AutoLoad
@@ -403,12 +403,12 @@ function Assets:Window(ScreenAsset,Window)
 	function Window:AddToAutoLoad(FolderName,Name)
 		if not isfolder(FolderName) then makefolder(FolderName) end
 		if not isfile(FolderName.."\\AutoLoads.json") then
-			writefile(FolderName.."\\AutoLoads.json","{}")
+			writefile(FolderName.."\\AutoLoads.json","[]")
 		end
 
 		local AutoLoads = HttpService:JSONDecode(
 			readfile(FolderName.."\\AutoLoads.json")
-		) AutoLoads[game.GameId] = Name
+		) AutoLoads[tostring(game.GameId)] = Name
 
 		writefile(FolderName.."\\AutoLoads.json",
 			HttpService:JSONEncode(AutoLoads)
@@ -417,13 +417,13 @@ function Assets:Window(ScreenAsset,Window)
 	function Window:RemoveFromAutoLoad(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
 		if not isfile(FolderName.."\\AutoLoads.json") then
-			writefile(FolderName.."\\AutoLoads.json","{}")
+			writefile(FolderName.."\\AutoLoads.json","[]")
 			return
 		end
 
 		local AutoLoads = HttpService:JSONDecode(
 			readfile(FolderName.."\\AutoLoads.json")
-		) AutoLoads[game.GameId] = nil
+		) AutoLoads[tostring(game.GameId)] = nil
 
 		writefile(FolderName.."\\AutoLoads.json",
 			HttpService:JSONEncode(AutoLoads)
@@ -432,7 +432,7 @@ function Assets:Window(ScreenAsset,Window)
 	function Window:AutoLoadConfig(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
 		if not isfile(FolderName.."\\AutoLoads.json") then
-			writefile(FolderName.."\\AutoLoads.json","{}")
+			writefile(FolderName.."\\AutoLoads.json","[]")
 		end
 
 		local AutoLoads = HttpService:JSONDecode(
