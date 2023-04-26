@@ -773,12 +773,11 @@ function Assets:Textbox(Parent,ScreenAsset,Window,Textbox)
 
 	TextboxAsset.Background.Input.FocusLost:Connect(function(EnterPressed)
 		local Input = TextboxAsset.Background.Input
-		TextboxAsset.Background.Size = UDim2.new(1,0,0,Input.TextSize + 2)
-		TextboxAsset.Size = UDim2.new(1,0,0,TextboxAsset.Title.Size.Y.Offset + TextboxAsset.Background.Size.Y.Offset)
 
 		Textbox.EnterPressed = EnterPressed
 		Textbox.Value = Input.Text Textbox.EnterPressed = false
-		if Textbox.PasswordMode then Input.Text = string.rep("*", #Input.Text) end
+		TextboxAsset.Background.Size = UDim2.new(1,0,0,Input.TextSize + 2)
+		TextboxAsset.Size = UDim2.new(1,0,0,TextboxAsset.Title.Size.Y.Offset + TextboxAsset.Background.Size.Y.Offset)
 	end)
 
 	Textbox:GetPropertyChangedSignal("Name"):Connect(function(Name)
@@ -788,7 +787,9 @@ function Assets:Textbox(Parent,ScreenAsset,Window,Textbox)
 		TextboxAsset.Background.Input.PlaceholderText = PlaceHolder
 	end)
 	Textbox:GetPropertyChangedSignal("Value"):Connect(function(Value)
-		TextboxAsset.Background.Input.Text = Textbox.AutoClear and "" or Value
+		local Input = TextboxAsset.Background.Input
+		Input.Text = Textbox.AutoClear and "" or Value
+		if Textbox.PasswordMode then Input.Text = string.rep(utf8.char(8226),#Input.Text) end
 
 		Window.Flags[Textbox.Flag] = Value
 		Textbox.Callback(Value,Textbox.EnterPressed)
