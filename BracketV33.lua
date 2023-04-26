@@ -7,8 +7,8 @@ local RunService = game:GetService("RunService")
 local PlayerService = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 
-local Debug,Assets,LocalPlayer = false,{},PlayerService.LocalPlayer
-local MainAssetFolder = Debug and ReplicatedStorage.BracketV33
+local IsLocal,Assets,LocalPlayer = false,{},PlayerService.LocalPlayer
+local MainAssetFolder = IsLocal and ReplicatedStorage.BracketV33
 or InsertService:LoadLocalAsset("rbxassetid://10827276896")
 
 local function GetAsset(AssetPath)
@@ -186,11 +186,11 @@ local function FindElementByFlag(Elements,Flag)
 end
 local function GetConfigs(FolderName)
 	if not isfolder(FolderName) then makefolder(FolderName) end
-	if not isfolder(FolderName.."\\Configs") then makefolder(FolderName.."\\Configs") end
+	if not isfolder(FolderName .. "\\Configs") then makefolder(FolderName .. "\\Configs") end
 
 	local Configs = {}
-	for Index,Config in pairs(listfiles(FolderName.."\\Configs") or {}) do
-		Config = Config:gsub(FolderName.."\\Configs\\","")
+	for Index,Config in pairs(listfiles(FolderName .. "\\Configs") or {}) do
+		Config = Config:gsub(FolderName .. "\\Configs\\","")
 		Config = Config:gsub(".json","")
 		Configs[#Configs + 1] = Config
 	end
@@ -198,16 +198,16 @@ local function GetConfigs(FolderName)
 end
 local function ConfigsToList(FolderName)
 	if not isfolder(FolderName) then makefolder(FolderName) end
-	if not isfolder(FolderName.."\\Configs") then makefolder(FolderName.."\\Configs") end
-	if not isfile(FolderName.."\\AutoLoads.json") then writefile(FolderName.."\\AutoLoads.json","[]") end
+	if not isfolder(FolderName .. "\\Configs") then makefolder(FolderName .. "\\Configs") end
+	if not isfile(FolderName .. "\\AutoLoads.json") then writefile(FolderName .. "\\AutoLoads.json","[]") end
 
 	local Configs = {}
 	local AutoLoads = HttpService:JSONDecode(
-			readfile(FolderName.."\\AutoLoads.json")
+			readfile(FolderName .. "\\AutoLoads.json")
 	) local AutoLoad = AutoLoads[tostring(game.GameId)]
 
-	for Index,Config in pairs(listfiles(FolderName.."\\Configs") or {}) do
-		Config = Config:gsub(FolderName.."\\Configs\\","")
+	for Index,Config in pairs(listfiles(FolderName .. "\\Configs") or {}) do
+		Config = Config:gsub(FolderName .. "\\Configs\\","")
 		Config = Config:gsub(".json","")
 		Configs[#Configs + 1] = {
 			Name = Config,Mode = "Button",
@@ -219,9 +219,9 @@ local function ConfigsToList(FolderName)
 end
 
 function Assets:Screen() local ScreenAsset = GetAsset("Screen/Bracket")
-	if not Debug then sethiddenproperty(ScreenAsset,"OnTopOfCoreBlur",true) end
+	if not IsLocal then sethiddenproperty(ScreenAsset,"OnTopOfCoreBlur",true) end
 	ScreenAsset.Name = "Bracket " .. game:GetService("HttpService"):GenerateGUID(false)
-	ScreenAsset.Parent = Debug and LocalPlayer:FindFirstChildOfClass("PlayerGui") or CoreGui
+	ScreenAsset.Parent = IsLocal and LocalPlayer:FindFirstChildOfClass("PlayerGui") or CoreGui
 	return {ScreenAsset = ScreenAsset,TableToColor = TableToColor}
 end
 function Assets:Window(ScreenAsset,Window)
@@ -267,7 +267,7 @@ function Assets:Window(ScreenAsset,Window)
 	Window:GetPropertyChangedSignal("Enabled"):Connect(function(Enabled)
 		WindowAsset.Visible = Enabled
 
-		if not Debug then RunService:SetRobloxGuiFocused(Enabled and Window.Blur) end
+		if not IsLocal then RunService:SetRobloxGuiFocused(Enabled and Window.Blur) end
 		if not Enabled then
 			for Index,Object in pairs(ScreenAsset:GetChildren()) do
 				if Object.Name == "Palette" or Object.Name == "OptionContainer" then
@@ -277,7 +277,7 @@ function Assets:Window(ScreenAsset,Window)
 		end
 	end)
 	Window:GetPropertyChangedSignal("Blur"):Connect(function(Blur)
-		if not Debug then RunService:SetRobloxGuiFocused(Window.Enabled and Blur) end
+		if not IsLocal then RunService:SetRobloxGuiFocused(Window.Enabled and Blur) end
 	end)
 	Window:GetPropertyChangedSignal("Name"):Connect(function(Name)
 		WindowAsset.Title.Text = Name
@@ -366,14 +366,14 @@ function Assets:Window(ScreenAsset,Window)
 			end
 		end
 		writefile(
-			FolderName.."\\Configs\\"..Name..".json",
+			FolderName .. "\\Configs\\" .. Name .. ".json",
 			HttpService:JSONEncode(Config)
 		)
 	end
 	function Window:LoadConfig(FolderName,Name)
 		if table.find(GetConfigs(FolderName),Name) then
 			local DecodedJSON = HttpService:JSONDecode(
-				readfile(FolderName.."\\Configs\\"..Name..".json")
+				readfile(FolderName .. "\\Configs\\" .. Name .. ".json")
 			)
 			for Flag,Value in pairs(DecodedJSON) do
 				local Element = FindElementByFlag(Window.Elements,Flag)
@@ -383,17 +383,17 @@ function Assets:Window(ScreenAsset,Window)
 	end
 	function Window:DeleteConfig(FolderName,Name)
 		if table.find(GetConfigs(FolderName),Name) then
-			delfile(FolderName.."\\Configs\\"..Name..".json")
+			delfile(FolderName .. "\\Configs\\" .. Name .. ".json")
 		end
 	end
 	function Window:GetAutoLoadConfig(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
-		if not isfile(FolderName.."\\AutoLoads.json") then
-			writefile(FolderName.."\\AutoLoads.json","[]")
+		if not isfile(FolderName .. "\\AutoLoads.json") then
+			writefile(FolderName .. "\\AutoLoads.json","[]")
 		end
 
 		local AutoLoads = HttpService:JSONDecode(
-			readfile(FolderName.."\\AutoLoads.json")
+			readfile(FolderName .. "\\AutoLoads.json")
 		) local AutoLoad = AutoLoads[tostring(game.GameId)]
 
 		if table.find(GetConfigs(FolderName),AutoLoad) then
@@ -402,41 +402,41 @@ function Assets:Window(ScreenAsset,Window)
 	end
 	function Window:AddToAutoLoad(FolderName,Name)
 		if not isfolder(FolderName) then makefolder(FolderName) end
-		if not isfile(FolderName.."\\AutoLoads.json") then
-			writefile(FolderName.."\\AutoLoads.json","[]")
+		if not isfile(FolderName .. "\\AutoLoads.json") then
+			writefile(FolderName .. "\\AutoLoads.json","[]")
 		end
 
 		local AutoLoads = HttpService:JSONDecode(
-			readfile(FolderName.."\\AutoLoads.json")
+			readfile(FolderName .. "\\AutoLoads.json")
 		) AutoLoads[tostring(game.GameId)] = Name
 
-		writefile(FolderName.."\\AutoLoads.json",
+		writefile(FolderName .. "\\AutoLoads.json",
 			HttpService:JSONEncode(AutoLoads)
 		)
 	end
 	function Window:RemoveFromAutoLoad(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
-		if not isfile(FolderName.."\\AutoLoads.json") then
-			writefile(FolderName.."\\AutoLoads.json","[]")
+		if not isfile(FolderName .. "\\AutoLoads.json") then
+			writefile(FolderName .. "\\AutoLoads.json","[]")
 			return
 		end
 
 		local AutoLoads = HttpService:JSONDecode(
-			readfile(FolderName.."\\AutoLoads.json")
+			readfile(FolderName .. "\\AutoLoads.json")
 		) AutoLoads[tostring(game.GameId)] = nil
 
-		writefile(FolderName.."\\AutoLoads.json",
+		writefile(FolderName .. "\\AutoLoads.json",
 			HttpService:JSONEncode(AutoLoads)
 		)
 	end
 	function Window:AutoLoadConfig(FolderName)
 		if not isfolder(FolderName) then makefolder(FolderName) end
-		if not isfile(FolderName.."\\AutoLoads.json") then
-			writefile(FolderName.."\\AutoLoads.json","[]")
+		if not isfile(FolderName .. "\\AutoLoads.json") then
+			writefile(FolderName .. "\\AutoLoads.json","[]")
 		end
 
 		local AutoLoads = HttpService:JSONDecode(
-			readfile(FolderName.."\\AutoLoads.json")
+			readfile(FolderName .. "\\AutoLoads.json")
 		) local AutoLoad = AutoLoads[tostring(game.GameId)]
 
 		if table.find(GetConfigs(FolderName),AutoLoad) then
@@ -522,7 +522,7 @@ function Assets:ToolTip(Parent,ScreenAsset,Text)
 	end)
 end
 function Assets.Snowflakes(WindowAsset)
-	local ParticleEmitter = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/AlexR32/rParticle/master/Main.lua"))()
+	local ParticleEmitter = loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexR32/rParticle/master/Main.lua"))()
 	local Emitter = ParticleEmitter.new(WindowAsset.Background,WindowAsset.Snowflake)
 	local NewRandom = Random.new() Emitter.SpawnRate = 20
 
@@ -642,11 +642,10 @@ function Assets:Toggle(Parent,ScreenAsset,Window,Toggle)
 	end)
 	Toggle:GetPropertyChangedSignal("Value"):Connect(function(Value)
 		Toggle.ColorConfig[1] = Value
-		Window.Flags[Toggle.Flag] = Value
-		Toggle.Callback(Value)
-
 		ToggleAsset.Tick.BackgroundColor3 = Value
 		and Window.Color or Color3.fromRGB(60,60,60)
+		Window.Flags[Toggle.Flag] = Value
+		Toggle.Callback(Value)
 	end)
 
 	function Toggle:ToolTip(Text)
@@ -768,14 +767,22 @@ function Assets:Textbox(Parent,ScreenAsset,Window,Textbox)
 			Vector2.new(TextboxAsset.Background.Input.AbsoluteSize.X,TextboxAsset.Background.Input.TextSize)
 		)
 
+		if Textbox.PasswordMode then
+			TextBox.Text = string.rep("*", #TextBox.Text)
+		end
+
 		TextboxAsset.Background.Size = UDim2.new(1,0,0,TextBounds.Y + 2)
 		TextboxAsset.Size = UDim2.new(1,0,0,TextboxAsset.Title.Size.Y.Offset + TextboxAsset.Background.Size.Y.Offset)
 	end)
 
 	TextboxAsset.Background.Input.FocusLost:Connect(function(EnterPressed)
+		local Input = TextboxAsset.Background.Input
+		TextboxAsset.Background.Size = UDim2.new(1,0,0,Input.TextSize + 2)
+		TextboxAsset.Size = UDim2.new(1,0,0,TextboxAsset.Title.Size.Y.Offset + TextboxAsset.Background.Size.Y.Offset)
+
 		Textbox.EnterPressed = EnterPressed
-		Textbox.Value = TextboxAsset.Background.Input.Text
-		Textbox.EnterPressed = false
+		Textbox.Value = Input.Text Textbox.EnterPressed = false
+		if Textbox.PasswordMode then Input.Text = string.rep("*", #Input.Text) end
 	end)
 
 	Textbox:GetPropertyChangedSignal("Name"):Connect(function(Name)
@@ -902,7 +909,7 @@ function Assets:ToggleKeybind(Parent,ScreenAsset,Window,Keybind,Toggle)
 			Keybind.Value = Key
 		elseif Input.UserInputType.Name == "Keyboard" then
 			if Key == Keybind.Value then
-				Toggle.Value = not Toggle.Value
+				if not Keybind.DisableToggle then Toggle.Value = not Toggle.Value end
 				Keybind.Callback(Keybind.Value,true,Toggle.Value)
 			end
 		end
@@ -914,7 +921,7 @@ function Assets:ToggleKeybind(Parent,ScreenAsset,Window,Keybind,Toggle)
 				or Key == "MouseButton2"
 				or Key == "MouseButton3" then
 				if Key == Keybind.Value then
-					Toggle.Value = not Toggle.Value
+					if not Keybind.DisableToggle then Toggle.Value = not Toggle.Value end
 					Keybind.Callback(Keybind.Value,true,Toggle.Value)
 				end
 			end
@@ -1075,7 +1082,7 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 			if string.find(Index,"Colorpicker") then
 				Option[Index] = GetType(Option[Index],{},"table",true)
 				Option[Index].Flag = GetType(Option[Index].Flag,
-					Dropdown.Flag.."/"..Option.Name.."/Colorpicker","string")
+					Dropdown.Flag .. "/" .. Option.Name .. "/Colorpicker","string")
 
 				Option[Index].Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
 				Option[Index].Callback = GetType(Option[Index].Callback,function() end,"function")
@@ -1547,12 +1554,12 @@ function Bracket:Window(Window)
 				ConfigSection:Button({Name = "Refresh",Callback = UpdateList})
 
 				local ConfigDivider = ConfigSection:Divider({Text = not ALConfig and "AutoLoad Config"
-				or "AutoLoad Config\n<font color=\"rgb(189,189,189)\">[ "..ALConfig.." ]</font>"})
+				or "AutoLoad Config\n<font color=\"rgb(189,189,189)\">[ " .. ALConfig .. " ]</font>"})
 
 				ConfigSection:Button({Name = "Set AutoLoad Config",Callback = function()
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
 						Window:AddToAutoLoad(FolderName,ConfigDropdown.Value[1])
-						ConfigDivider.Text = "AutoLoad Config\n<font color=\"rgb(189,189,189)\">[ "..ConfigDropdown.Value[1].." ]</font>"
+						ConfigDivider.Text = "AutoLoad Config\n<font color=\"rgb(189,189,189)\">[ " .. ConfigDropdown.Value[1] .. " ]</font>"
 					else
 						Bracket:Notification({
 							Title = "Config System",
@@ -1600,7 +1607,7 @@ function Bracket:Window(Window)
 			local ToggleAsset = Assets:Toggle(ChooseTabSide(TabAsset,Toggle.Side),Bracket.ScreenAsset,Window,Toggle)
 			function Toggle:Keybind(Keybind)
 				Keybind = GetType(Keybind,{},"table",true)
-				Keybind.Flag = GetType(Keybind.Flag,Toggle.Flag.."/Keybind","string")
+				Keybind.Flag = GetType(Keybind.Flag,Toggle.Flag .. "/Keybind","string")
 
 				Keybind.Value = GetType(Keybind.Value,"NONE","string")
 				Keybind.Mouse = GetType(Keybind.Mouse,false,"boolean")
@@ -1614,7 +1621,7 @@ function Bracket:Window(Window)
 			end
 			function Toggle:Colorpicker(Colorpicker)
 				Colorpicker = GetType(Colorpicker,{},"table",true)
-				Colorpicker.Flag = GetType(Colorpicker.Flag,Toggle.Flag.."/Colorpicker","string")
+				Colorpicker.Flag = GetType(Colorpicker.Flag,Toggle.Flag .. "/Colorpicker","string")
 
 				Colorpicker.Value = GetType(Colorpicker.Value,{1,1,1,0,false},"table")
 				Colorpicker.Callback = GetType(Colorpicker.Callback,function() end,"function")
@@ -1734,7 +1741,7 @@ function Bracket:Window(Window)
 				local ToggleAsset = Assets:Toggle(SectionContainer,Bracket.ScreenAsset,Window,Toggle)
 				function Toggle:Keybind(Keybind)
 					Keybind = GetType(Keybind,{},"table",true)
-					Keybind.Flag = GetType(Keybind.Flag,Toggle.Flag.."/Keybind","string")
+					Keybind.Flag = GetType(Keybind.Flag,Toggle.Flag .. "/Keybind","string")
 
 					Keybind.Value = GetType(Keybind.Value,"NONE","string")
 					Keybind.Mouse = GetType(Keybind.Mouse,false,"boolean")
@@ -1748,7 +1755,7 @@ function Bracket:Window(Window)
 				end
 				function Toggle:Colorpicker(Colorpicker)
 					Colorpicker = GetType(Colorpicker,{},"table",true)
-					Colorpicker.Flag = GetType(Colorpicker.Flag,Toggle.Flag.."/Colorpicker","string")
+					Colorpicker.Flag = GetType(Colorpicker.Flag,Toggle.Flag .. "/Colorpicker","string")
 
 					Colorpicker.Value = GetType(Colorpicker.Value,{1,1,1,0,false},"table")
 					Colorpicker.Callback = GetType(Colorpicker.Callback,function() end,"function")
