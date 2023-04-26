@@ -767,10 +767,6 @@ function Assets:Textbox(Parent,ScreenAsset,Window,Textbox)
 			Vector2.new(TextboxAsset.Background.Input.AbsoluteSize.X,TextboxAsset.Background.Input.TextSize)
 		)
 
-		if Textbox.PasswordMode then
-			TextBox.Text = string.rep("*", #TextBox.Text)
-		end
-
 		TextboxAsset.Background.Size = UDim2.new(1,0,0,TextBounds.Y + 2)
 		TextboxAsset.Size = UDim2.new(1,0,0,TextboxAsset.Title.Size.Y.Offset + TextboxAsset.Background.Size.Y.Offset)
 	end)
