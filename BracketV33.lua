@@ -407,8 +407,8 @@ function Assets:Window(ScreenAsset,Window)
 			if type(Element.WaitingForBind) == "boolean" and not Element.IgnoreList then
 				Element.ListMimic = {}
 				Element.ListMimic.Asset = GetAsset("KeybindList/KeybindMimic")
-				Element.ListMimic.Asset.Title.Text = Element.Name
-				Element.ListMimic.Asset.Parent = Window.KeybindList.List
+				Element.ListMimic.Asset.Title.Text = Element.Name or Element.Toggle.Name
+				Element.ListMimic.Asset.Parent = ScreenAsset.KeybindList.List
 
 				Element.ListMimic.ColorConfig = {false,"BackgroundColor3"}
 				Window.Colorable[Element.ListMimic.Asset.Tick] = Element.ListMimic.ColorConfig
@@ -996,6 +996,7 @@ end
 function Assets:ToggleKeybind(Parent,ScreenAsset,Window,Keybind,Toggle)
 	local KeybindAsset = GetAsset("Keybind/TKeybind")
 	Keybind.WaitingForBind = false
+	Keybind.Toggle = Toggle
 
 	KeybindAsset.Parent = Parent
 	KeybindAsset.Text = "[ " .. Keybind.Value .. " ]"
