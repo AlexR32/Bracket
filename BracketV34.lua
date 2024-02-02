@@ -1218,25 +1218,6 @@ Bracket.Assets = {
 		Slider.TextWrapped = true
 		Slider.FontFace = Font.fromEnum(Enum.Font.SourceSans)
 
-		local Title = Instance.new("TextLabel")
-		Title.Name = "Title"
-		Title.ZIndex = 2
-		Title.Size = UDim2.new(1, -24, 1, 0)
-		Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
-		Title.BackgroundTransparency = 1
-		Title.Position = UDim2.new(0, 6, 0, 0)
-		Title.BorderSizePixel = 0
-		Title.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
-		Title.TextStrokeTransparency = 0.75
-		Title.TextSize = 14
-		Title.RichText = true
-		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Title.Text = "Slider"
-		Title.TextWrapped = true
-		Title.FontFace = Font.fromEnum(Enum.Font.SourceSans)
-		Title.TextXAlignment = Enum.TextXAlignment.Left
-		Title.Parent = Slider
-
 		local Background = Instance.new("Frame")
 		Background.Name = "Background"
 		Background.ZIndex = 2
@@ -1289,6 +1270,25 @@ Bracket.Assets = {
 		Value.FontFace = Font.fromEnum(Enum.Font.SourceSans)
 		Value.TextXAlignment = Enum.TextXAlignment.Right
 		Value.Parent = Slider
+
+		local Title = Instance.new("TextLabel")
+		Title.Name = "Title"
+		Title.ZIndex = 2
+		Title.Size = UDim2.new(1, -24, 1, 0)
+		Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Title.BackgroundTransparency = 1
+		Title.Position = UDim2.new(0, 6, 0, 0)
+		Title.BorderSizePixel = 0
+		Title.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
+		Title.TextStrokeTransparency = 0.75
+		Title.TextSize = 14
+		Title.RichText = true
+		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Title.Text = "Slider"
+		Title.TextWrapped = true
+		Title.FontFace = Font.fromEnum(Enum.Font.SourceSans)
+		Title.TextXAlignment = Enum.TextXAlignment.Left
+		Title.Parent = Slider
 
 		return Slider
 	end,
@@ -2192,9 +2192,9 @@ Bracket.Elements = {
 	Window = function(Window)
 		local WindowAsset = Bracket.Assets.Window()
 
-		Window.Background = WindowAsset.Background
+		Window.Elements, Window.Flags, Window.Colorable = {}, {}, {}
 		Window.RainbowHue, Window.RainbowSpeed = 0, 10
-		Window.Colorable, Window.Elements, Window.Flags = {}, {}, {}
+		Window.Background = WindowAsset.Background
 
 		WindowAsset.Parent = Bracket.Screen
 		WindowAsset.Visible = Window.Enabled
@@ -2209,7 +2209,7 @@ Bracket.Elements = {
 			Window.Size = Size
 		end)
 
-		local Month = tonumber(os.date("%m"))
+		--local Month = tonumber(os.date("%m"))
 		--if Month == 12 or Month == 1 then task.spawn(Bracket.Elements.Snowflakes, WindowAsset) end
 		WindowAsset.TabButtonContainer.ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 			WindowAsset.TabButtonContainer.CanvasSize = UDim2.fromOffset(WindowAsset.TabButtonContainer.ListLayout.AbsoluteContentSize.X, 0)
@@ -2261,22 +2261,22 @@ Bracket.Elements = {
 			end
 		end)
 
-		function Window:SetValue(Flag, Value)
-			for Index, Element in pairs(Window.Elements) do
+		function Window.SetValue(Self, Flag, Value)
+			for Index, Element in pairs(Self.Elements) do
 				if Element.Flag == Flag then
 					Element.Value = Value
 				end
 			end
 		end
-		function Window:GetValue(Flag)
-			for Index, Element in pairs(Window.Elements) do
+		function Window.GetValue(Self, Flag)
+			for Index, Element in pairs(Self.Elements) do
 				if Element.Flag == Flag then
 					return Element.Value
 				end
 			end
 		end
 
-		function Window:Watermark(Watermark)
+		function Window.Watermark(Self, Watermark)
 			Watermark = Bracket.Utilities:GetType(Watermark, {}, "table", true)
 			Watermark.Enabled = Bracket.Utilities:GetType(Watermark.Enabled, false, "boolean")
 			Watermark.Title = Bracket.Utilities:GetType(Watermark.Title, "Hello World!", "string")
@@ -2315,27 +2315,27 @@ Bracket.Elements = {
 					Value[1], Value[2],
 					Value[3], Value[4]
 				)
-				Window.Flags[Watermark.Flag] = {
+				Self.Flags[Watermark.Flag] = {
 					Value[1], Value[2],
 					Value[3], Value[4]
 				}
 			end)
 
-			Window.Elements[#Window.Elements + 1] = Watermark
-			Window.Watermark = Watermark
+			Self.Elements[#Self.Elements + 1] = Watermark
+			Self.Watermark = Watermark
 			return Watermark
 		end
-		function Window:KeybindList(KeybindList)
+		function Window.KeybindList(Self, KeybindList)
 			KeybindList = Bracket.Utilities:GetType(KeybindList, {}, "table", true)
 			KeybindList.Enabled = Bracket.Utilities:GetType(KeybindList.Enabled, false, "boolean")
-			--KeybindList.Title = Bracket.Utilities:GetType(KeybindList.Title, "", "string")
+			KeybindList.Title = Bracket.Utilities:GetType(KeybindList.Title, "Keybinds", "string")
 
 			KeybindList.Position = Bracket.Utilities:GetType(KeybindList.Position, UDim2.new(0, 10, 0.5, -123), "UDim2")
 			KeybindList.Size = Bracket.Utilities:GetType(KeybindList.Size, UDim2.new(0, 121, 0, 246), "UDim2")
 			KeybindList.List = Bracket.Screen.KeybindList.List
 
 			Bracket.Screen.KeybindList.Visible = KeybindList.Enabled
-			--Bracket.Screen.KeybindList.Title.Text = KeybindList.Title
+			Bracket.Screen.KeybindList.Title.Text = KeybindList.Title
 
 			Bracket.Utilities.MakeDraggable(Bracket.Screen.KeybindList.Drag, Bracket.Screen.KeybindList, function(Position)
 				KeybindList.Position = Position
@@ -2344,9 +2344,9 @@ Bracket.Elements = {
 				KeybindList.Size = Size
 			end)
 
-			--[[KeybindList:GetPropertyChangedSignal("Title"):Connect(function(Title)
+			KeybindList:GetPropertyChangedSignal("Title"):Connect(function(Title)
 				Bracket.Screen.KeybindList.Title.Text = Title
-			end)]]
+			end)
 			KeybindList:GetPropertyChangedSignal("Enabled"):Connect(function(Enabled)
 				Bracket.Screen.KeybindList.Visible = Enabled
 			end)
@@ -2369,37 +2369,29 @@ Bracket.Elements = {
 				end
 			end)
 
-			for Index, Element in pairs(Window.Elements) do
+			for Index, Element in pairs(Self.Elements) do
 				if type(Element.WaitingForBind) == "boolean" and not Element.IgnoreList then
 					Element.ListMimic = {}
 					Element.ListMimic.Asset = Bracket.Assets.KeybindMimic()
-					Element.ListMimic.Asset.Title.Text = Element.Name
-					Element.ListMimic.Asset.Parent = Window.KeybindList.List
+					Element.ListMimic.Asset.Title.Text = Element.Name or Element.Toggle.Name
+					Element.ListMimic.Asset.Visible = Element.Value ~= "NONE"
+					Element.ListMimic.Asset.Parent = KeybindList.List
 
 					Element.ListMimic.ColorConfig = {false, "BackgroundColor3"}
-					Window.Colorable[Element.ListMimic.Asset.Tick] = Element.ListMimic.ColorConfig
+					Self.Colorable[Element.ListMimic.Asset.Tick] = Element.ListMimic.ColorConfig
 				end
 			end
-			--[[KeybindList:GetPropertyChangedSignal("Data"):Connect(function(Data)
-				for Index, KeybindObject in pairs(Bracket.Screen.KeybindList.List:GetChildren()) do
-					for Index2, KeybindData in pairs(Data) do
-						if KeybindObject.Name == KeybindData.Name then
 
-						end
-					end
-				end
-			end)]]
-
-			Window.Elements[#Window.Elements + 1] = KeybindList
-			Window.KeybindList = KeybindList
+			Self.Elements[#Self.Elements + 1] = KeybindList
+			Self.KeybindList = KeybindList
 			return KeybindList
 		end
 
-		function Window:SaveConfig(FolderName, Name)
+		function Window.SaveConfig(Self, FolderName, Name)
 			local Config = {}
-			for Index, Element in pairs(Window.Elements) do
+			for Index, Element in pairs(Self.Elements) do
 				if not Element.IgnoreFlag then
-					Config[Element.Flag] = Window.Flags[Element.Flag]
+					Config[Element.Flag] = Self.Flags[Element.Flag]
 				end
 			end
 			writefile(
@@ -2407,13 +2399,13 @@ Bracket.Elements = {
 				HttpService:JSONEncode(Config)
 			)
 		end
-		function Window:LoadConfig(FolderName, Name)
+		function Window.LoadConfig(Self, FolderName, Name)
 			if table.find(GetConfigs(FolderName), Name) then
 				local DecodedJSON = HttpService:JSONDecode(
 					readfile(FolderName .. "\\Configs\\" .. Name .. ".json")
 				)
 				for Flag, Value in pairs(DecodedJSON) do
-					local Element = Bracket.Utilities.FindElementByFlag(Window.Elements, Flag)
+					local Element = Bracket.Utilities.FindElementByFlag(Self.Elements, Flag)
 					if Element ~= nil then Element.Value = Value end
 				end
 			end
@@ -2466,7 +2458,7 @@ Bracket.Elements = {
 				HttpService:JSONEncode(AutoLoads)
 			)
 		end
-		function Window:AutoLoadConfig(FolderName)
+		function Window.AutoLoadConfig(Self, FolderName)
 			if not isfolder(FolderName) then makefolder(FolderName) end
 			if not isfile(FolderName .. "\\AutoLoads.json") then
 				writefile(FolderName .. "\\AutoLoads.json", "[]")
@@ -2477,7 +2469,7 @@ Bracket.Elements = {
 			) local AutoLoad = AutoLoads[tostring(game.GameId)]
 
 			if table.find(Bracket.Utilities.GetConfigs(FolderName), AutoLoad) then
-				Window:LoadConfig(FolderName, AutoLoad)
+				Self:LoadConfig(FolderName, AutoLoad)
 			end
 		end
 
@@ -2654,7 +2646,7 @@ Bracket.Elements = {
 			Button.Connection = ButtonAsset.MouseButton1Click:Connect(Callback)
 		end)
 
-		function Button.Tooltip(Text)
+		function Button:Tooltip(Text)
 			Bracket.Elements.Tooltip(ButtonAsset, Text)
 		end
 	end,
@@ -2688,7 +2680,7 @@ Bracket.Elements = {
 			Toggle.Callback(Value)
 		end)
 
-		function Toggle.Tooltip(Text)
+		function Toggle:Tooltip(Text)
 			Bracket.Elements.Tooltip(ToggleAsset, Text)
 		end
 
@@ -2727,12 +2719,12 @@ Bracket.Elements = {
 		else
 			SliderAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
 				SliderAsset.Value.Size = UDim2.new(0, SliderAsset.Value.TextBounds.X, 1, 0)
-				SliderAsset.Title.Size = UDim2.new(1, -SliderAsset.Value.Size.X.Offset + 12, 1, 0)
+				SliderAsset.Title.Size = UDim2.new(1, -SliderAsset.Value.Size.X.Offset - 12, 1, 0)
 				SliderAsset.Size = UDim2.new(1, 0, 0, SliderAsset.Title.TextBounds.Y + 2)
 			end)
 			SliderAsset.Value:GetPropertyChangedSignal("TextBounds"):Connect(function()
 				SliderAsset.Value.Size = UDim2.new(0, SliderAsset.Value.TextBounds.X, 1, 0)
-				SliderAsset.Title.Size = UDim2.new(1, -SliderAsset.Value.Size.X.Offset + 12, 1, 0)
+				SliderAsset.Title.Size = UDim2.new(1, -SliderAsset.Value.Size.X.Offset - 12, 1, 0)
 			end)
 		end
 
@@ -2777,7 +2769,7 @@ Bracket.Elements = {
 			Slider.Callback(Value)
 		end)
 
-		function Slider.Tooltip(Text)
+		function Slider:Tooltip(Text)
 			Bracket.Elements.Tooltip(SliderAsset, Text)
 		end
 	end,
@@ -2846,7 +2838,7 @@ Bracket.Elements = {
 			Textbox.Callback(Value, Textbox.EnterPressed)
 		end)
 
-		function Textbox.Tooltip(Text)
+		function Textbox:Tooltip(Text)
 			Bracket.Elements.Tooltip(TextboxAsset, Text)
 		end
 	end,
@@ -2965,13 +2957,14 @@ Bracket.Elements = {
 			Keybind.Callback(Value, false, Keybind.Toggle)
 		end)
 
-		function Keybind.Tooltip(Text)
+		function Keybind:Tooltip(Text)
 			Bracket.Elements.Tooltip(KeybindAsset, Text)
 		end
 	end,
 	ToggleKeybind = function(Parent, Window, Keybind, Toggle)
 		local KeybindAsset = Bracket.Assets.ToggleKeybind()
 		Keybind.WaitingForBind = false
+		Keybind.Toggle = Toggle
 
 		KeybindAsset.Parent = Parent
 		KeybindAsset.Text = "[ " .. Keybind.Value .. " ]"
@@ -3213,27 +3206,27 @@ Bracket.Elements = {
 				AddOption(Option, true, Index)
 			end
 		end
-		function Dropdown:AddOption(Option)
-			AddOption(Option, true, #Dropdown.List)
+		function Dropdown.AddOption(Self, Option)
+			AddOption(Option, true, #Self.List)
 		end
 
-		function Dropdown:Clear()
-			for Index, Option in pairs(Dropdown.List) do
+		function Dropdown.Clear(Self)
+			for Index, Option in pairs(Self.List) do
 				Option.Object:Destroy()
-			end table.clear(Dropdown.List)
+			end table.clear(Self.List)
 		end
-		function Dropdown:RemoveOption(Name)
-			for Index, Option in pairs(Dropdown.List) do
+		function Dropdown.RemoveOption(Self, Name)
+			for Index, Option in pairs(Self.List) do
 				if Option.Name == Name then
 					Option.Object:Destroy()
-					table.remove(Dropdown.List, Index)
+					table.remove(Self.List, Index)
 				end
 			end
-			for Index, Option in pairs(Dropdown.List) do
+			for Index, Option in pairs(Self.List) do
 				Option.Object.LayoutOrder = Index
 			end
 		end
-		function Dropdown:RefreshToPlayers(ToggleMode)
+		function Dropdown.RefreshToPlayers(Self, ToggleMode)
 			local Players = {}
 			for Index, Player in pairs(PlayerService:GetPlayers()) do
 				if Player == LocalPlayer then continue end
@@ -3241,19 +3234,9 @@ Bracket.Elements = {
 					Mode = ToggleMode == "Toggle" or "Button"
 				})
 			end
-			Dropdown:Clear()
-			Dropdown:BulkAdd(Players)
+			Self:Clear()
+			Self:BulkAdd(Players)
 		end
-
-	--[[function Dropdown:SetValue(Options)
-		for Index, Option in pairs(Dropdown.List) do
-			if table.find(Options, Option.Name) then
-				Option.Value = true
-			else
-				Option.Value = false
-			end
-		end
-	end]]
 
 		Dropdown:GetPropertyChangedSignal("Name"):Connect(function(Name)
 			DropdownAsset.Title.Text = Name
@@ -3273,7 +3256,7 @@ Bracket.Elements = {
 			end
 		end)
 
-		function Dropdown.Tooltip(Text)
+		function Dropdown:Tooltip(Text)
 			Bracket.Elements.Tooltip(DropdownAsset, Text)
 		end
 	end,
@@ -3434,7 +3417,7 @@ Bracket.Elements = {
 			Colorpicker.Callback(Value, Value[6])
 		end) Colorpicker.Value = Colorpicker.Value
 
-		function Colorpicker.Tooltip(Text)
+		function Colorpicker:Tooltip(Text)
 			Bracket.Elements.Tooltip(ColorpickerAsset, Text)
 		end
 	end,
