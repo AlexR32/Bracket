@@ -2874,7 +2874,8 @@ Bracket.Elements = {
 			Window.Colorable[Keybind.ListMimic.Asset.Tick] = Keybind.ListMimic.ColorConfig
 		end
 
-		UserInputService.InputBegan:Connect(function(Input)
+		UserInputService.InputBegan:Connect(function(Input, GameProcessedEvent)
+			if GameProcessedEvent then return end
 			local Key = Input.KeyCode.Name
 			if Keybind.WaitingForBind and Input.UserInputType.Name == "Keyboard" then
 				Keybind.Value = Key
@@ -2906,7 +2907,8 @@ Bracket.Elements = {
 				end
 			end
 		end)
-		UserInputService.InputEnded:Connect(function(Input)
+		UserInputService.InputEnded:Connect(function(Input, GameProcessedEvent)
+			if GameProcessedEvent then return end
 			local Key = Input.KeyCode.Name
 			if Input.UserInputType.Name == "Keyboard" then
 				if Key == Keybind.Value then
@@ -2988,7 +2990,8 @@ Bracket.Elements = {
 			Window.Colorable[Keybind.ListMimic.Asset.Tick] = Keybind.ListMimic.ColorConfig
 		end
 
-		UserInputService.InputBegan:Connect(function(Input)
+		UserInputService.InputBegan:Connect(function(Input, GameProcessedEvent)
+			if GameProcessedEvent then return end
 			local Key = Input.KeyCode.Name
 			if Keybind.WaitingForBind and Input.UserInputType.Name == "Keyboard" then
 				Keybind.Value = Key
@@ -3012,7 +3015,8 @@ Bracket.Elements = {
 				end
 			end
 		end)
-		UserInputService.InputEnded:Connect(function(Input)
+		UserInputService.InputEnded:Connect(function(Input, GameProcessedEvent)
+			if GameProcessedEvent then return end
 			local Key = Input.KeyCode.Name
 			if Input.UserInputType.Name == "Keyboard" then
 				if Key == Keybind.Value then
