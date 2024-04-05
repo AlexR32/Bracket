@@ -134,6 +134,13 @@ Bracket.Utilities = {
 			end
 		end)
 	end,
+	ClosePopUps = function()
+		for Index, Object in pairs(Bracket.Screen:GetChildren()) do
+			if Object.Name == "OptionContainer" or Object.Name == "Palette" then
+				Object.Visible = false
+			end
+		end
+	end,
 	ChooseTab = function(TabButtonAsset, TabAsset)
 		for Index, Object in pairs(Bracket.Screen:GetChildren()) do
 			if Object.Name == "OptionContainer" or Object.Name == "Palette" then
@@ -346,7 +353,7 @@ Bracket.Assets = {
 
 		local Resize = Instance.new("ImageButton")
 		Resize.Name = "Resize"
-		Resize.ZIndex = 2
+		Resize.ZIndex = 3
 		Resize.AnchorPoint = Vector2.new(1, 1)
 		Resize.Size = UDim2.new(0, 10, 0, 10)
 		Resize.BorderColor3 = Color3.fromRGB(63, 63, 63)
@@ -1616,7 +1623,7 @@ Bracket.Assets = {
 	DropdownContainer = function()
 		local OptionContainer = Instance.new("ScrollingFrame")
 		OptionContainer.Name = "OptionContainer"
-		OptionContainer.ZIndex = 2
+		OptionContainer.ZIndex = 3
 		OptionContainer.Visible = false
 		OptionContainer.Size = UDim2.new(0, 100, 0, 100)
 		OptionContainer.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -1658,7 +1665,7 @@ Bracket.Assets = {
 	DropdownOption = function()
 		local Option = Instance.new("TextButton")
 		Option.Name = "Option"
-		Option.ZIndex = 2
+		Option.ZIndex = 3
 		Option.Size = UDim2.new(1, 0, 0, 16)
 		Option.BorderColor3 = Color3.fromRGB(63, 63, 63)
 		Option.BorderSizePixel = 0
@@ -1680,7 +1687,7 @@ Bracket.Assets = {
 
 		local Title = Instance.new("TextLabel")
 		Title.Name = "Title"
-		Title.ZIndex = 2
+		Title.ZIndex = 3
 		Title.AnchorPoint = Vector2.new(0, 0.5)
 		Title.Size = UDim2.new(1, -18, 1, 0)
 		Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -1700,7 +1707,7 @@ Bracket.Assets = {
 
 		local Tick = Instance.new("Frame")
 		Tick.Name = "Tick"
-		Tick.ZIndex = 2
+		Tick.ZIndex = 3
 		Tick.AnchorPoint = Vector2.new(0, 0.5)
 		Tick.Size = UDim2.new(0, 12, 0, 12)
 		Tick.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -1716,7 +1723,7 @@ Bracket.Assets = {
 
 		local Layout = Instance.new("Frame")
 		Layout.Name = "Layout"
-		Layout.ZIndex = 2
+		Layout.ZIndex = 3
 		Layout.AnchorPoint = Vector2.new(1, 0.5)
 		Layout.Size = UDim2.new(1, -54, 1, 0)
 		Layout.ClipsDescendants = true
@@ -2194,7 +2201,9 @@ Bracket.Elements = {
 
 		Window.Elements, Window.Flags, Window.Colorable = {}, {}, {}
 		Window.RainbowHue, Window.RainbowSpeed = 0, 10
-		Window.Background = WindowAsset.Background
+
+		Window.Asset = WindowAsset
+		Window.Background = Window.Asset.Background
 
 		WindowAsset.Parent = Bracket.Screen
 		WindowAsset.Visible = Window.Enabled
@@ -2400,7 +2409,7 @@ Bracket.Elements = {
 			)
 		end
 		function Window.LoadConfig(Self, FolderName, Name)
-			if table.find(GetConfigs(FolderName), Name) then
+			if table.find(Bracket.Utilities.GetConfigs(FolderName), Name) then
 				local DecodedJSON = HttpService:JSONDecode(
 					readfile(FolderName .. "\\Configs\\" .. Name .. ".json")
 				)
@@ -2761,6 +2770,12 @@ Bracket.Elements = {
 		end)
 		Slider:GetPropertyChangedSignal("Value"):Connect(function(Value)
 			Value = tonumber(string.format("%." .. Slider.Precise .. "f", Value))
+			if Slider.OnlyOdd and Slider.Precise == 0 then
+				if Value % 2 == 0 then return end
+			elseif Slider.OnlyEven and Slider.Precise == 0 then
+				if Value % 2 == 1 then return end
+			end
+
 			SliderAsset.Background.Bar.Size = UDim2.fromScale(Bracket.Utilities.Scale(Value, Slider.Min, Slider.Max, 0, 1), 1)
 			SliderAsset.Value.PlaceholderText = #Slider.Unit == 0
 				and Value or Value .. " " .. Slider.Unit
@@ -3079,8 +3094,22 @@ Bracket.Elements = {
 
 		DropdownAsset.MouseButton1Click:Connect(function()
 			if not OptionContainerAsset.Visible and OptionContainerAsset.ListLayout.AbsoluteContentSize.Y ~= 0 then
+				Bracket.Utilities.ClosePopUps()
+				OptionContainerAsset.Visible = true
 				ContainerRender = RunService.RenderStepped:Connect(function()
 					if not OptionContainerAsset.Visible then ContainerRender:Disconnect() end
+
+					local TabPosition = Window.Asset.TabContainer.AbsolutePosition.Y + Window.Asset.TabContainer.AbsoluteSize.Y
+					local DropdownPosition = DropdownAsset.Background.AbsolutePosition.Y + DropdownAsset.Background.AbsoluteSize.Y
+					if TabPosition < DropdownPosition then
+						OptionContainerAsset.Visible = false
+					end
+
+					TabPosition = Window.Asset.TabContainer.AbsolutePosition.Y
+					DropdownPosition = DropdownAsset.Background.AbsolutePosition.Y
+					if TabPosition > DropdownPosition then
+						OptionContainerAsset.Visible = false
+					end
 
 					OptionContainerAsset.Position = UDim2.fromOffset(
 						DropdownAsset.Background.AbsolutePosition.X,
@@ -3092,7 +3121,6 @@ Bracket.Elements = {
 						--OptionContainerAsset.ListLayout.AbsoluteContentSize.Y + 2
 					)
 				end)
-				OptionContainerAsset.Visible = true
 			else
 				OptionContainerAsset.Visible = false
 			end
@@ -3287,9 +3315,24 @@ Bracket.Elements = {
 
 		ColorpickerAsset.MouseButton1Click:Connect(function()
 			if not PaletteAsset.Visible then
+				Bracket.Utilities.ClosePopUps()
 				PaletteAsset.Visible = true
+
 				PaletteRender = RunService.RenderStepped:Connect(function()
 					if not PaletteAsset.Visible then PaletteRender:Disconnect() end
+
+					local TabPosition = Window.Asset.TabContainer.AbsolutePosition.Y + Window.Asset.TabContainer.AbsoluteSize.Y
+					local ColorpickerPosition = ColorpickerAsset.Color.AbsolutePosition.Y + ColorpickerAsset.Color.AbsoluteSize.Y
+					if TabPosition < ColorpickerPosition then
+						PaletteAsset.Visible = false
+					end
+
+					TabPosition = Window.Asset.TabContainer.AbsolutePosition.Y
+					ColorpickerPosition = ColorpickerAsset.Color.AbsolutePosition.Y
+					if TabPosition > ColorpickerPosition then
+						PaletteAsset.Visible = false
+					end
+
 					PaletteAsset.Position = UDim2.fromOffset(
 						(ColorpickerAsset.Color.AbsolutePosition.X - PaletteAsset.AbsoluteSize.X) + 20,
 						(ColorpickerAsset.Color.AbsolutePosition.Y + GuiInset.Y) + 14
@@ -3441,9 +3484,24 @@ Bracket.Elements = {
 
 		ColorpickerAsset.MouseButton1Click:Connect(function()
 			if not PaletteAsset.Visible then
+				Bracket.Utilities.ClosePopUps()
 				PaletteAsset.Visible = true
+
 				PaletteRender = RunService.RenderStepped:Connect(function()
 					if not PaletteAsset.Visible then PaletteRender:Disconnect() end
+
+					local TabPosition = Window.Asset.TabContainer.AbsolutePosition.Y + Window.Asset.TabContainer.AbsoluteSize.Y
+					local ColorpickerPosition = ColorpickerAsset.AbsolutePosition.Y + ColorpickerAsset.AbsoluteSize.Y
+					if TabPosition < ColorpickerPosition then
+						PaletteAsset.Visible = false
+					end
+
+					TabPosition = Window.Asset.TabContainer.AbsolutePosition.Y
+					ColorpickerPosition = ColorpickerAsset.AbsolutePosition.Y
+					if TabPosition > ColorpickerPosition then
+						PaletteAsset.Visible = false
+					end
+
 					PaletteAsset.Position = UDim2.fromOffset(
 						(ColorpickerAsset.AbsolutePosition.X - PaletteAsset.AbsoluteSize.X) + 24,
 						(ColorpickerAsset.AbsolutePosition.Y + GuiInset.Y) + 16

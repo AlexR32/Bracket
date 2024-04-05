@@ -233,7 +233,7 @@ local function InitWindow(ScreenAsset,Window)
 		Window.Enabled = Boolean
 		WindowAsset.Visible = Window.Enabled
 
-		if not Debug  then
+		if not Debug then
 		RunService:SetRobloxGuiFocused(Window.Enabled and Window.Flags["UI/Blur"]) end
 		if not Window.Enabled then for Index,Instance in pairs(ScreenAsset:GetChildren()) do
 			if Instance.Name == "Palette" or Instance.Name == "OptionContainer" then
