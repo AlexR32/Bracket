@@ -37,7 +37,7 @@ Bracket.Utilities = {
 	Proxify = function(Table)
 		local Proxy, Events = {}, {}
 		local ChangedEvent = Instance.new("BindableEvent")
-		Table.Changed = ChangedEvent.Event
+		Proxy.Changed = ChangedEvent.Event
 		Proxy.Internal = Table
 
 		function Table:GetPropertyChangedSignal(Property)
@@ -68,12 +68,12 @@ Bracket.Utilities = {
 
 		return Proxy
 	end,
-	GetType = function(Self, Object, Default, Type, UseProxify)
+	GetType = function(Self, Object, Type, Default, UseProxy)
 		if typeof(Object) == Type then
-			return UseProxify and Self.Proxify(Object) or Object
+			return UseProxy and Self.Proxify(Object) or Object
 		end
 
-		return UseProxify and Self.Proxify(Default) or Default
+		return UseProxy and Self.Proxify(Default) or Default
 	end,
 	GetTextBounds = function(Text, Font, Size)
 		return TextService:GetTextSize(Text, Size.Y, Font, Vector2.new(Size.X, 1e6))
@@ -93,7 +93,8 @@ Bracket.Utilities = {
 				local Delta = Mouse - Position
 				Position = Mouse
 
-				OnChange(Object.Position + UDim2.fromOffset(Delta.X, Delta.Y))
+				Delta = Object.Position + UDim2.fromOffset(Delta.X, Delta.Y)
+				if OnChange then OnChange(Delta) end
 			end
 		end)
 		Dragger.InputEnded:Connect(function(Input)
@@ -179,7 +180,7 @@ Bracket.Utilities = {
 	end,
 	FindElementByFlag = function(Elements, Flag)
 		for Index, Element in pairs(Elements) do
-			if Element.Flag == Flag then
+			if Element.Flag and Element.Flag == Flag then
 				return Element
 			end
 		end
@@ -2202,6 +2203,7 @@ Bracket.Elements = {
 		Window.Elements, Window.Flags, Window.Colorable = {}, {}, {}
 		Window.RainbowHue, Window.RainbowSpeed = 0, 10
 
+		Window.Type = "Window"
 		Window.Asset = WindowAsset
 		Window.Background = Window.Asset.Background
 
@@ -2272,24 +2274,26 @@ Bracket.Elements = {
 
 		function Window.SetValue(Self, Flag, Value)
 			for Index, Element in pairs(Self.Elements) do
-				if Element.Flag == Flag then
+				if Element.Flag and Element.Flag == Flag then
 					Element.Value = Value
 				end
 			end
 		end
 		function Window.GetValue(Self, Flag)
 			for Index, Element in pairs(Self.Elements) do
-				if Element.Flag == Flag then
+				if Element.Flag and Element.Flag == Flag then
 					return Element.Value
 				end
 			end
 		end
 
 		function Window.Watermark(Self, Watermark)
-			Watermark = Bracket.Utilities:GetType(Watermark, {}, "table", true)
-			Watermark.Enabled = Bracket.Utilities:GetType(Watermark.Enabled, false, "boolean")
-			Watermark.Title = Bracket.Utilities:GetType(Watermark.Title, "Hello World!", "string")
-			Watermark.Flag = Bracket.Utilities:GetType(Watermark.Flag, "UI/Watermark/Position", "string")
+			Watermark = Bracket.Utilities:GetType(Watermark, "table", {}, true)
+			Watermark.Enabled = Bracket.Utilities:GetType(Watermark.Enabled, "boolean", false)
+			Watermark.Title = Bracket.Utilities:GetType(Watermark.Title, "string", "Hello World!")
+			Watermark.Flag = Bracket.Utilities:GetType(Watermark.Flag, "string", "UI/Watermark/Position")
+
+			Watermark.Type = "Watermark"
 
 			Bracket.Screen.Watermark.Visible = Watermark.Enabled
 			Bracket.Screen.Watermark.Text = Watermark.Title
@@ -2300,8 +2304,10 @@ Bracket.Elements = {
 			)
 
 			Bracket.Utilities.MakeDraggable(Bracket.Screen.Watermark, Bracket.Screen.Watermark, function(Position)
+				if not Window.Enabled then return end
 				Bracket.Screen.Watermark.Position = Position
 			end, function(Position)
+				if not Window.Enabled then return end
 				Watermark.Value = {
 					Position.X.Scale, Position.X.Offset,
 					Position.Y.Scale, Position.Y.Offset
@@ -2335,13 +2341,15 @@ Bracket.Elements = {
 			return Watermark
 		end
 		function Window.KeybindList(Self, KeybindList)
-			KeybindList = Bracket.Utilities:GetType(KeybindList, {}, "table", true)
-			KeybindList.Enabled = Bracket.Utilities:GetType(KeybindList.Enabled, false, "boolean")
-			KeybindList.Title = Bracket.Utilities:GetType(KeybindList.Title, "Keybinds", "string")
+			KeybindList = Bracket.Utilities:GetType(KeybindList, "table", {}, true)
+			KeybindList.Enabled = Bracket.Utilities:GetType(KeybindList.Enabled, "boolean", false)
+			KeybindList.Title = Bracket.Utilities:GetType(KeybindList.Title, "string", "Keybinds")
+			KeybindList.Position = Bracket.Utilities:GetType(KeybindList.Position, "UDim2", UDim2.new(0, 10, 0.5, -123))
+			KeybindList.Size = Bracket.Utilities:GetType(KeybindList.Size, "UDim2", UDim2.new(0, 121, 0, 246))
 
-			KeybindList.Position = Bracket.Utilities:GetType(KeybindList.Position, UDim2.new(0, 10, 0.5, -123), "UDim2")
-			KeybindList.Size = Bracket.Utilities:GetType(KeybindList.Size, UDim2.new(0, 121, 0, 246), "UDim2")
-			KeybindList.List = Bracket.Screen.KeybindList.List
+			KeybindList.Type = "KeybindList"
+			KeybindList.Asset = Bracket.Screen.KeybindList
+			KeybindList.List = KeybindList.Asset.List
 
 			Bracket.Screen.KeybindList.Visible = KeybindList.Enabled
 			Bracket.Screen.KeybindList.Title.Text = KeybindList.Title
@@ -2379,19 +2387,28 @@ Bracket.Elements = {
 			end)
 
 			for Index, Element in pairs(Self.Elements) do
-				if type(Element.WaitingForBind) == "boolean" and not Element.IgnoreList then
+				if Element.Type == "Keybind" and not Element.IgnoreList then
 					Element.ListMimic = {}
 					Element.ListMimic.Asset = Bracket.Assets.KeybindMimic()
-					Element.ListMimic.Asset.Title.Text = Element.Name or Element.Toggle.Name
+					Element.ListMimic.Asset.Title.Text = Element.CustomName or Element.Name or Element.Toggle.Name
 					Element.ListMimic.Asset.Visible = Element.Value ~= "NONE"
+					Element.ListMimic.Asset.Layout.Keybind.Text = "[ " .. Element.Value .. " ]"
 					Element.ListMimic.Asset.Parent = KeybindList.List
+
+					Element.ListMimic.Asset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+						Element.ListMimic.Asset.Layout.Size = UDim2.new(1, -Element.ListMimic.Asset.Title.TextBounds.X - 18, 1, 0)
+					end)
+
+					Element.ListMimic.Asset.Layout.Keybind:GetPropertyChangedSignal("TextBounds"):Connect(function()
+						Element.ListMimic.Asset.Layout.Keybind.Size = UDim2.new(0, Element.ListMimic.Asset.Layout.Keybind.TextBounds.X, 1, 0)
+					end)
 
 					Element.ListMimic.ColorConfig = {false, "BackgroundColor3"}
 					Self.Colorable[Element.ListMimic.Asset.Tick] = Element.ListMimic.ColorConfig
 				end
 			end
 
-			Self.Elements[#Self.Elements + 1] = KeybindList
+			--Self.Elements[#Self.Elements + 1] = KeybindList
 			Self.KeybindList = KeybindList
 			return KeybindList
 		end
@@ -2399,7 +2416,7 @@ Bracket.Elements = {
 		function Window.SaveConfig(Self, FolderName, Name)
 			local Config = {}
 			for Index, Element in pairs(Self.Elements) do
-				if not Element.IgnoreFlag then
+				if Element.Flag and not Element.IgnoreFlag then
 					Config[Element.Flag] = Self.Flags[Element.Flag]
 				end
 			end
@@ -2491,6 +2508,10 @@ Bracket.Elements = {
 		Tab.ColorConfig = {true, "BackgroundColor3"}
 		Window.Colorable[TabButtonAsset.Highlight] = Tab.ColorConfig
 
+		Tab.Type = "Tab"
+		Tab.Asset = TabAsset
+		Tab.ButtonAsset = TabButtonAsset
+
 		TabAsset.Parent = WindowAsset.TabContainer
 		TabButtonAsset.Parent = WindowAsset.TabButtonContainer
 
@@ -2528,6 +2549,10 @@ Bracket.Elements = {
 	end,
 	Section = function(Parent, Section)
 		local SectionAsset = Bracket.Assets.Section()
+
+		Section.Type = "Section"
+		Section.Asset = SectionAsset
+		Section.Container = Section.Asset.Container
 
 		SectionAsset.Parent = Parent
 		SectionAsset.Title.Text = Section.Name
@@ -2587,6 +2612,9 @@ Bracket.Elements = {
 	Divider = function(Parent, Divider)
 		local DividerAsset = Bracket.Assets.Divider()
 
+		Divider.Type = "Divider"
+		Divider.Asset = DividerAsset
+
 		DividerAsset.Parent = Parent
 		DividerAsset.Title.Text = Divider.Text
 
@@ -2609,6 +2637,9 @@ Bracket.Elements = {
 	Label = function(Parent, Label)
 		local LabelAsset = Bracket.Assets.Label()
 
+		Label.Type = "Label"
+		Label.Asset = LabelAsset
+
 		LabelAsset.Parent = Parent
 		LabelAsset.Text = Label.Text
 
@@ -2622,6 +2653,9 @@ Bracket.Elements = {
 	end,
 	Button = function(Parent, Window, Button)
 		local ButtonAsset = Bracket.Assets.Button()
+
+		Button.Type = "Button"
+		Button.Asset = ButtonAsset
 
 		Button.ColorConfig = {false, "BorderColor3"}
 		Window.Colorable[ButtonAsset] = Button.ColorConfig
@@ -2662,6 +2696,9 @@ Bracket.Elements = {
 	Toggle = function(Parent, Window, Toggle)
 		local ToggleAsset = Bracket.Assets.Toggle()
 
+		Toggle.Type = "Toggle"
+		Toggle.Asset = ToggleAsset
+
 		Toggle.ColorConfig = {Toggle.Value, "BackgroundColor3"}
 		Window.Colorable[ToggleAsset.Tick] = Toggle.ColorConfig
 
@@ -2689,6 +2726,35 @@ Bracket.Elements = {
 			Toggle.Callback(Value)
 		end)
 
+		function Toggle:Keybind(Keybind)
+			Keybind = Bracket.Utilities:GetType(Keybind, "table", {}, true)
+			Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, "string", Toggle.Flag .. "/Keybind")
+
+			Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "string", "NONE")
+			Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, "boolean", false)
+			Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, "function", function() end)
+			Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, "table", {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"})
+
+			Window.Elements[#Window.Elements + 1] = Keybind
+			Window.Flags[Keybind.Flag] = Keybind.Value
+
+			Bracket.Elements.ToggleKeybind(ToggleAsset.Layout, Window, Keybind, Toggle)
+			return Keybind
+		end
+		function Toggle:Colorpicker(Colorpicker)
+			Colorpicker = Bracket.Utilities:GetType(Colorpicker, "table", {}, true)
+			Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, "string", Toggle.Flag .. "/Colorpicker")
+
+			Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, "table", {1, 1, 1, 0, false})
+			Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, "function", function() end)
+
+			Window.Elements[#Window.Elements + 1] = Colorpicker
+			Window.Flags[Colorpicker.Flag] = Colorpicker.Value
+
+			Bracket.Elements.ToggleColorpicker(ToggleAsset.Layout, Window, Colorpicker)
+			return Colorpicker
+		end
+
 		function Toggle:Tooltip(Text)
 			Bracket.Elements.Tooltip(ToggleAsset, Text)
 		end
@@ -2698,11 +2764,14 @@ Bracket.Elements = {
 	Slider = function(Parent, Window, Slider)
 		local SliderAsset = Slider.Slim and Bracket.Assets.SlimSlider() or Bracket.Assets.Slider()
 
+		Slider.Type = "Slider"
+		Slider.Asset = SliderAsset
+
 		Slider.ColorConfig = {true, "BackgroundColor3"}
 		Window.Colorable[SliderAsset.Background.Bar] = Slider.ColorConfig
 
-		Slider.Active = false
 		Slider.Value = tonumber(string.format("%." .. Slider.Precise .. "f", Slider.Value))
+		Slider.Active = false
 
 		SliderAsset.Parent = Parent
 		SliderAsset.Title.Text = Slider.Name
@@ -2739,12 +2808,10 @@ Bracket.Elements = {
 
 		SliderAsset.Value.FocusLost:Connect(function()
 			if not tonumber(SliderAsset.Value.Text) then
-				SliderAsset.Value.Text = Slider.Value
-			elseif tonumber(SliderAsset.Value.Text) <= Slider.Min then
-				SliderAsset.Value.Text = Slider.Min
-			elseif tonumber(SliderAsset.Value.Text) >= Slider.Max then
-				SliderAsset.Value.Text = Slider.Max
+				SliderAsset.Value.Text = ""
+				return
 			end
+
 			Slider.Value = SliderAsset.Value.Text
 			SliderAsset.Value.Text = ""
 		end)
@@ -2770,6 +2837,13 @@ Bracket.Elements = {
 		end)
 		Slider:GetPropertyChangedSignal("Value"):Connect(function(Value)
 			Value = tonumber(string.format("%." .. Slider.Precise .. "f", Value))
+
+			if Value < Slider.Min then
+				Value = Slider.Min
+			elseif Value > Slider.Max then
+				Value = Slider.Max
+			end
+
 			if Slider.OnlyOdd and Slider.Precise == 0 then
 				if Value % 2 == 0 then return end
 			elseif Slider.OnlyEven and Slider.Precise == 0 then
@@ -2777,9 +2851,9 @@ Bracket.Elements = {
 			end
 
 			SliderAsset.Background.Bar.Size = UDim2.fromScale(Bracket.Utilities.Scale(Value, Slider.Min, Slider.Max, 0, 1), 1)
-			SliderAsset.Value.PlaceholderText = #Slider.Unit == 0
-				and Value or Value .. " " .. Slider.Unit
+			SliderAsset.Value.PlaceholderText = #Slider.Unit == 0 and Value or Value .. " " .. Slider.Unit
 
+			Slider.Internal.Value = Value
 			Window.Flags[Slider.Flag] = Value
 			Slider.Callback(Value)
 		end)
@@ -2790,6 +2864,10 @@ Bracket.Elements = {
 	end,
 	Textbox = function(Parent, Window, Textbox)
 		local TextboxAsset = Bracket.Assets.Textbox()
+
+		Textbox.Type = "Textbox"
+		Textbox.Asset = TextboxAsset
+
 		Textbox.EnterPressed = false
 
 		TextboxAsset.Parent = Parent
@@ -2859,6 +2937,10 @@ Bracket.Elements = {
 	end,
 	Keybind = function(Parent, Window, Keybind)
 		local KeybindAsset = Bracket.Assets.Keybind()
+
+		Keybind.Type = "Keybind"
+		Keybind.Asset = KeybindAsset
+
 		Keybind.WaitingForBind = false
 
 		KeybindAsset.Parent = Parent
@@ -2880,10 +2962,18 @@ Bracket.Elements = {
 		if type(Window.KeybindList) == "table" and not Keybind.IgnoreList then
 			Keybind.ListMimic = {}
 			Keybind.ListMimic.Asset = Bracket.Assets.KeybindMimic()
-			Keybind.ListMimic.Asset.Title.Text = Keybind.Name
+			Keybind.ListMimic.Asset.Title.Text = Keybind.CustomName or Keybind.Name
 			Keybind.ListMimic.Asset.Visible = Keybind.Value ~= "NONE"
+			Keybind.ListMimic.Asset.Layout.Keybind.Text = "[ " .. Keybind.Value .. " ]"
 			Keybind.ListMimic.Asset.Parent = Window.KeybindList.List
 
+			Keybind.ListMimic.Asset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+				Keybind.ListMimic.Asset.Layout.Size = UDim2.new(1, -Keybind.ListMimic.Asset.Title.TextBounds.X - 18, 1, 0)
+			end)
+
+			Keybind.ListMimic.Asset.Layout.Keybind:GetPropertyChangedSignal("TextBounds"):Connect(function()
+				Keybind.ListMimic.Asset.Layout.Keybind.Size = UDim2.new(0, Keybind.ListMimic.Asset.Layout.Keybind.TextBounds.X, 1, 0)
+			end)
 
 			Keybind.ListMimic.ColorConfig = {false, "BackgroundColor3"}
 			Window.Colorable[Keybind.ListMimic.Asset.Tick] = Keybind.ListMimic.ColorConfig
@@ -2952,15 +3042,14 @@ Bracket.Elements = {
 		Keybind:GetPropertyChangedSignal("Name"):Connect(function(Name)
 			KeybindAsset.Title.Text = Name
 		end)
+		Keybind:GetPropertyChangedSignal("CustomName"):Connect(function(Value, OldValue)
+			if Keybind.ListMimic then
+				Keybind.ListMimic.Asset.Title.Text = Value or Keybind.Name
+			end
+		end)
 		Keybind:GetPropertyChangedSignal("Value"):Connect(function(Value, OldValue)
 			if table.find(Keybind.Blacklist, Value) then
-				if Keybind.DoNotClear then
-					Keybind.Internal.Value = OldValue
-					Value = OldValue
-				else
-					Keybind.Internal.Value = "NONE"
-					Value = "NONE"
-				end
+				Value = Keybind.DoNotClear and OldValue or "NONE"
 			end
 
 			KeybindAsset.Value.Text = "[ " .. tostring(Value) .. " ]"
@@ -2970,6 +3059,7 @@ Bracket.Elements = {
 			end
 
 			Keybind.WaitingForBind = false
+			Keybind.Internal.Value = Value
 			Window.Flags[Keybind.Flag] = Value
 			Keybind.Callback(Value, false, Keybind.Toggle)
 		end)
@@ -2980,6 +3070,10 @@ Bracket.Elements = {
 	end,
 	ToggleKeybind = function(Parent, Window, Keybind, Toggle)
 		local KeybindAsset = Bracket.Assets.ToggleKeybind()
+
+		Keybind.Type = "Keybind"
+		Keybind.Asset = KeybindAsset
+
 		Keybind.WaitingForBind = false
 		Keybind.Toggle = Toggle
 
@@ -2997,9 +3091,17 @@ Bracket.Elements = {
 		if type(Window.KeybindList) == "table" and not Keybind.IgnoreList then
 			Keybind.ListMimic = {}
 			Keybind.ListMimic.Asset = Bracket.Assets.KeybindMimic()
-			Keybind.ListMimic.Asset.Title.Text = Toggle.Name
+			Keybind.ListMimic.Asset.Title.Text = Keybind.CustomName or Toggle.Name
 			Keybind.ListMimic.Asset.Visible = Keybind.Value ~= "NONE"
 			Keybind.ListMimic.Asset.Parent = Window.KeybindList.List
+
+			Keybind.ListMimic.Asset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+				Keybind.ListMimic.Asset.Layout.Size = UDim2.new(1, -Keybind.ListMimic.Asset.Title.TextBounds.X - 18, 1, 0)
+			end)
+
+			Keybind.ListMimic.Asset.Layout.Keybind:GetPropertyChangedSignal("TextBounds"):Connect(function()
+				Keybind.ListMimic.Asset.Layout.Keybind.Size = UDim2.new(0, Keybind.ListMimic.Asset.Layout.Keybind.TextBounds.X, 1, 0)
+			end)
 
 			Keybind.ListMimic.ColorConfig = {false, "BackgroundColor3"}
 			Window.Colorable[Keybind.ListMimic.Asset.Tick] = Keybind.ListMimic.ColorConfig
@@ -3057,15 +3159,14 @@ Bracket.Elements = {
 			end
 		end)
 
+		Keybind:GetPropertyChangedSignal("CustomName"):Connect(function(Value, OldValue)
+			if Keybind.ListMimic then
+				Keybind.ListMimic.Asset.Title.Text = Value or Toggle.Name
+			end
+		end)
 		Keybind:GetPropertyChangedSignal("Value"):Connect(function(Value, OldValue)
 			if table.find(Keybind.Blacklist, Value) then
-				if Keybind.DoNotClear then
-					Keybind.Internal.Value = OldValue
-					Value = OldValue
-				else
-					Keybind.Internal.Value = "NONE"
-					Value = "NONE"
-				end
+				Value = Keybind.DoNotClear and OldValue or "NONE"
 			end
 
 			KeybindAsset.Text = "[ " .. tostring(Value) .. " ]"
@@ -3075,6 +3176,7 @@ Bracket.Elements = {
 			end
 
 			Keybind.WaitingForBind = false
+			Keybind.Internal.Value = Value
 			Window.Flags[Keybind.Flag] = Value
 			Keybind.Callback(Value, false, Toggle.Value)
 		end)
@@ -3083,6 +3185,10 @@ Bracket.Elements = {
 		local OptionContainerAsset = Bracket.Assets.DropdownContainer()
 		local DropdownAsset = Bracket.Assets.Dropdown()
 
+		Dropdown.Type = "Dropdown"
+		Dropdown.Asset = DropdownAsset
+
+		Dropdown.OptionContainerAsset = OptionContainerAsset
 		Dropdown.Internal.Value = {}
 		local ContainerRender = nil
 
@@ -3092,10 +3198,99 @@ Bracket.Elements = {
 		DropdownAsset.Title.Text = Dropdown.Name
 		DropdownAsset.Title.Visible = not Dropdown.HideName
 
+		local function RefreshSelected()
+			table.clear(Dropdown.Internal.Value)
+
+			for Index, Option in pairs(Dropdown.List) do
+				if Option.Value then
+					table.insert(Dropdown.Internal.Value, Option.Name)
+				end
+			end
+
+			Window.Flags[Dropdown.Flag] = Dropdown.Internal.Value
+			DropdownAsset.Background.Value.Text = #Dropdown.Internal.Value == 0
+				and "..." or table.concat(Dropdown.Internal.Value, ", ")
+		end
+
+		local function SetValue(Option, Value)
+			Option.Value = Value
+			Option.ColorConfig[1] = Value
+			Option.Object.Tick.BackgroundColor3 = Value
+				and Window.Color or Color3.fromRGB(63, 63, 63)
+			--Option.Callback(Dropdown.Selected, Option)
+		end
+
+		local function AddOption(Option, AddToList, Order)
+			Option = Bracket.Utilities:GetType(Option, "table", {}, true)
+			Option.Name = Bracket.Utilities:GetType(Option.Name, "string", "Option")
+			Option.Mode = Bracket.Utilities:GetType(Option.Mode, "string", "Button")
+			Option.Value = Bracket.Utilities:GetType(Option.Value, "boolean", false)
+			Option.Callback = Bracket.Utilities:GetType(Option.Callback, "function", function() end)
+
+			local OptionAsset = Bracket.Assets.DropdownOption()
+			Option.Object = OptionAsset
+
+			OptionAsset.LayoutOrder = Order
+			OptionAsset.Parent = OptionContainerAsset
+			OptionAsset.Title.Text = Option.Name
+			OptionAsset.Tick.BackgroundColor3 = Option.Value
+				and Window.Color or Color3.fromRGB(63, 63, 63)
+
+			Option.ColorConfig = {Option.Value, "BackgroundColor3"}
+			Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
+			if AddToList then table.insert(Dropdown.List, Option) end
+
+			OptionAsset.MouseButton1Click:Connect(function()
+				Option.Value = not Option.Value
+			end)
+			OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+				OptionAsset.Layout.Size = UDim2.new(1, -OptionAsset.Title.TextBounds.X - 22, 1, 0)
+			end)
+
+			Option:GetPropertyChangedSignal("Name"):Connect(function(Name)
+				OptionAsset.Title.Text = Name
+			end)
+			Option:GetPropertyChangedSignal("Value"):Connect(function(Value)
+				if Option.Mode == "Button" then
+					for Index, OldOption in pairs(Dropdown.List) do
+						SetValue(OldOption.Internal, false)
+					end
+
+					Value = true
+					Option.Internal.Value = Value
+					OptionContainerAsset.Visible = false
+				end
+
+				RefreshSelected()
+				Option.ColorConfig[1] = Value
+				Option.Object.Tick.BackgroundColor3 = Value
+					and Window.Color or Color3.fromRGB(63, 63, 63)
+				Option.Callback(Dropdown.Value, Option)
+			end)
+
+			for Index, Value in pairs(Option.Internal) do
+				if string.find(Index, "Colorpicker") then
+					Option[Index] = Bracket.Utilities:GetType(Option[Index], "table", {}, true)
+					Option[Index].Flag = Bracket.Utilities:GetType(Option[Index].Flag, "string",
+						Dropdown.Flag .. "/" .. Option.Name .. "/Colorpicker")
+
+					Option[Index].Value = Bracket.Utilities:GetType(Option[Index].Value, "table", {1, 1, 1, 0, false})
+					Option[Index].Callback = Bracket.Utilities:GetType(Option[Index].Callback, "function", function() end)
+					Window.Elements[#Window.Elements + 1] = Option[Index]
+					Window.Flags[Option[Index].Flag] = Option[Index].Value
+
+					Bracket.Elements.ToggleColorpicker(OptionAsset.Layout, Window, Option[Index])
+				end
+			end
+
+			return Option
+		end
+
 		DropdownAsset.MouseButton1Click:Connect(function()
 			if not OptionContainerAsset.Visible and OptionContainerAsset.ListLayout.AbsoluteContentSize.Y ~= 0 then
 				Bracket.Utilities.ClosePopUps()
 				OptionContainerAsset.Visible = true
+
 				ContainerRender = RunService.RenderStepped:Connect(function()
 					if not OptionContainerAsset.Visible then ContainerRender:Disconnect() end
 
@@ -3140,98 +3335,32 @@ Bracket.Elements = {
 			DropdownAsset.Size = UDim2.new(1, 0, 0, DropdownAsset.Title.Size.Y.Offset + DropdownAsset.Background.Size.Y.Offset)
 		end)]]
 
-		local function RefreshSelected()
-			table.clear(Dropdown.Internal.Value)
+		Dropdown:GetPropertyChangedSignal("Name"):Connect(function(Name)
+			DropdownAsset.Title.Text = Name
+		end)
+		Dropdown:GetPropertyChangedSignal("Value"):Connect(function(Value)
+			if type(Value) ~= "table" then return end
+			if #Value == 0 then RefreshSelected() return end
 
 			for Index, Option in pairs(Dropdown.List) do
-				if Option.Value then
-					table.insert(Dropdown.Internal.Value, Option.Name)
+				if table.find(Value, Option.Name) then
+					Option.Value = true
+				else
+					if Option.Mode ~= "Button" then
+						Option.Value = false
+					end
 				end
 			end
-
-			Window.Flags[Dropdown.Flag] = Dropdown.Internal.Value
-			DropdownAsset.Background.Value.Text = #Dropdown.Internal.Value == 0
-				and "..." or table.concat(Dropdown.Internal.Value, ", ")
-		end
-
-		local function SetValue(Option, Value)
-			Option.Value = Value
-			Option.ColorConfig[1] = Value
-			Option.Object.Tick.BackgroundColor3 = Value
-				and Window.Color or Color3.fromRGB(63, 63, 63)
-			--Option.Callback(Dropdown.Selected, Option)
-		end
-
-		local function AddOption(Option, AddToList, Order)
-			Option = Bracket.Utilities:GetType(Option, {}, "table", true)
-			Option.Name = Bracket.Utilities:GetType(Option.Name, "Option", "string")
-			Option.Mode = Bracket.Utilities:GetType(Option.Mode, "Button", "string")
-			Option.Value = Bracket.Utilities:GetType(Option.Value, false, "boolean")
-			Option.Callback = Bracket.Utilities:GetType(Option.Callback, function() end, "function")
-
-			local OptionAsset = Bracket.Assets.DropdownOption()
-			Option.Object = OptionAsset
-
-			OptionAsset.LayoutOrder = Order
-			OptionAsset.Parent = OptionContainerAsset
-			OptionAsset.Title.Text = Option.Name
-			OptionAsset.Tick.BackgroundColor3 = Option.Value
-				and Window.Color or Color3.fromRGB(63, 63, 63)
-
-			Option.ColorConfig = {Option.Value, "BackgroundColor3"}
-			Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
-			if AddToList then table.insert(Dropdown.List, Option) end
-
-			OptionAsset.MouseButton1Click:Connect(function()
-				Option.Value = not Option.Value
-			end)
-			OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-				OptionAsset.Layout.Size = UDim2.new(1, -OptionAsset.Title.TextBounds.X - 22, 1, 0)
-			end)
-
-			Option:GetPropertyChangedSignal("Name"):Connect(function(Name)
-				OptionAsset.Title.Text = Name
-			end)
-			Option:GetPropertyChangedSignal("Value"):Connect(function(Value)
-				if Option.Mode == "Button" then
-					for Index, OldOption in pairs(Dropdown.List) do
-						SetValue(OldOption.Internal, false)
-					end Option.Internal.Value = true
-					Value = Option.Internal.Value
-					OptionContainerAsset.Visible = false
-				end
-
-				RefreshSelected()
-				Option.ColorConfig[1] = Value
-				Option.Object.Tick.BackgroundColor3 = Value
-					and Window.Color or Color3.fromRGB(63, 63, 63)
-				Option.Callback(Dropdown.Value, Option)
-			end)
-
-			for Index, Value in pairs(Option.Internal) do
-				if string.find(Index, "Colorpicker") then
-					Option[Index] = Bracket.Utilities:GetType(Option[Index], {}, "table", true)
-					Option[Index].Flag = Bracket.Utilities:GetType(Option[Index].Flag,
-						Dropdown.Flag .. "/" .. Option.Name .. "/Colorpicker", "string")
-
-					Option[Index].Value = Bracket.Utilities:GetType(Option[Index].Value, {1, 1, 1, 0, false}, "table")
-					Option[Index].Callback = Bracket.Utilities:GetType(Option[Index].Callback, function() end, "function")
-					Window.Elements[#Window.Elements + 1] = Option[Index]
-					Window.Flags[Option[Index].Flag] = Option[Index].Value
-
-					Bracket.Elements.ToggleColorpicker(OptionAsset.Layout, Window, Option[Index])
-				end
-			end
-
-			return Option
-		end
+		end)
 
 		-- Dropdown Update
 		for Index, Option in pairs(Dropdown.List) do
 			Dropdown.List[Index] = AddOption(Option, false, Index)
-		end for Index, Option in pairs(Dropdown.List) do
+		end
+		for Index, Option in pairs(Dropdown.List) do
 			if Option.Value then Option.Value = true end
-		end RefreshSelected()
+		end
+		RefreshSelected()
 
 		function Dropdown:BulkAdd(Table)
 			for Index, Option in pairs(Table) do
@@ -3270,24 +3399,6 @@ Bracket.Elements = {
 			Self:BulkAdd(Players)
 		end
 
-		Dropdown:GetPropertyChangedSignal("Name"):Connect(function(Name)
-			DropdownAsset.Title.Text = Name
-		end)
-		Dropdown:GetPropertyChangedSignal("Value"):Connect(function(Value)
-			if type(Value) ~= "table" then return end
-			if #Value == 0 then RefreshSelected() return end
-
-			for Index, Option in pairs(Dropdown.List) do
-				if table.find(Value, Option.Name) then
-					Option.Value = true
-				else
-					if Option.Mode ~= "Button" then
-						Option.Value = false
-					end
-				end
-			end
-		end)
-
 		function Dropdown:Tooltip(Text)
 			Bracket.Elements.Tooltip(DropdownAsset, Text)
 		end
@@ -3296,10 +3407,13 @@ Bracket.Elements = {
 		local ColorpickerAsset = Bracket.Assets.Colorpicker()
 		local PaletteAsset = Bracket.Assets.ColorpickerPalette()
 
+		Colorpicker.Type = "Colorpicker"
+		Colorpicker.Asset = ColorpickerAsset
+		Colorpicker.PaletteAsset = PaletteAsset
+
 		Colorpicker.ColorConfig = {Colorpicker.Value[5], "BackgroundColor3"}
 		Window.Colorable[PaletteAsset.Rainbow.Tick] = Colorpicker.ColorConfig
 		local PaletteRender, SVRender, HueRender, AlphaRender = nil, nil, nil, nil
-
 
 		ColorpickerAsset.Parent = Parent
 		PaletteAsset.Parent = Bracket.Screen
@@ -3307,7 +3421,6 @@ Bracket.Elements = {
 		ColorpickerAsset.Title.Text = Colorpicker.Name
 		PaletteAsset.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5]
 			and Window.Color or Color3.fromRGB(63, 63, 63)
-
 
 		ColorpickerAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
 			ColorpickerAsset.Size = UDim2.new(1, 0, 0, ColorpickerAsset.Title.TextBounds.Y)
@@ -3429,10 +3542,11 @@ Bracket.Elements = {
 				if PaletteAsset.Visible then
 					Colorpicker.Value[1] = Window.RainbowHue
 					Colorpicker.Value = Colorpicker.Value
-				else 
+				else
 					Colorpicker.Value[1] = Window.RainbowHue
 					Colorpicker.Value[6] = Bracket.Utilities.TableToColor(Colorpicker.Value)
 					ColorpickerAsset.Color.BackgroundColor3 = Colorpicker.Value[6]
+
 					Window.Flags[Colorpicker.Flag] = Colorpicker.Value
 					Colorpicker.Callback(Colorpicker.Value, Colorpicker.Value[6])
 				end
@@ -3462,15 +3576,21 @@ Bracket.Elements = {
 			PaletteAsset.HEX.HEXBox.PlaceholderText = string.upper(Value[6]:ToHex())
 			Window.Flags[Colorpicker.Flag] = Value
 			Colorpicker.Callback(Value, Value[6])
-		end) Colorpicker.Value = Colorpicker.Value
+		end)
 
 		function Colorpicker:Tooltip(Text)
 			Bracket.Elements.Tooltip(ColorpickerAsset, Text)
 		end
+
+		Colorpicker.Value = Colorpicker.Value
 	end,
 	ToggleColorpicker = function(Parent, Window, Colorpicker)
 		local ColorpickerAsset = Bracket.Assets.ToggleColorpicker()
 		local PaletteAsset = Bracket.Assets.ColorpickerPalette()
+
+		Colorpicker.Type = "Colorpicker"
+		Colorpicker.Asset = ColorpickerAsset
+		Colorpicker.PaletteAsset = PaletteAsset
 
 		Colorpicker.ColorConfig = {Colorpicker.Value[5], "BackgroundColor3"}
 		Window.Colorable[PaletteAsset.Rainbow.Tick] = Colorpicker.ColorConfig
@@ -3598,10 +3718,11 @@ Bracket.Elements = {
 				if PaletteAsset.Visible then
 					Colorpicker.Value[1] = Window.RainbowHue
 					Colorpicker.Value = Colorpicker.Value
-				else 
+				else
 					Colorpicker.Value[1] = Window.RainbowHue
 					Colorpicker.Value[6] = Bracket.Utilities.TableToColor(Colorpicker.Value)
 					ColorpickerAsset.BackgroundColor3 = Colorpicker.Value[6]
+
 					Window.Flags[Colorpicker.Flag] = Colorpicker.Value
 					Colorpicker.Callback(Colorpicker.Value, Colorpicker.Value[6])
 				end
@@ -3627,25 +3748,29 @@ Bracket.Elements = {
 			PaletteAsset.HEX.HEXBox.PlaceholderText = string.upper(Value[6]:ToHex())
 			Window.Flags[Colorpicker.Flag] = Value
 			Colorpicker.Callback(Value, Value[6])
-		end) Colorpicker.Value = Colorpicker.Value
+		end)
+
+		Colorpicker.Value = Colorpicker.Value
 	end
 }
 
 Bracket.Elements.Screen()
 function Bracket:Window(Window)
-	Window = Bracket.Utilities:GetType(Window, {}, "table", true)
-	Window.Blur = Bracket.Utilities:GetType(Window.Blur, false, "boolean")
-	Window.Name = Bracket.Utilities:GetType(Window.Name, "Window", "string")
-	Window.Enabled = Bracket.Utilities:GetType(Window.Enabled, true, "boolean")
-	Window.Color = Bracket.Utilities:GetType(Window.Color, Color3.new(1, 0.5, 0.25), "Color3")
-	Window.Position = Bracket.Utilities:GetType(Window.Position, UDim2.new(0.5, -248, 0.5, -248), "UDim2")
-	Window.Size = Bracket.Utilities:GetType(Window.Size, UDim2.new(0, 496, 0, 496), "UDim2")
+	Window = Bracket.Utilities:GetType(Window, "table", {}, true)
+	Window.Blur = Bracket.Utilities:GetType(Window.Blur, "boolean", false)
+	Window.Name = Bracket.Utilities:GetType(Window.Name, "string", "Window")
+	Window.Enabled = Bracket.Utilities:GetType(Window.Enabled, "boolean", true)
+	Window.Color = Bracket.Utilities:GetType(Window.Color, "Color3", Color3.new(1, 0.5, 0.25))
+	Window.Position = Bracket.Utilities:GetType(Window.Position, "UDim2", UDim2.new(0.5, -248, 0.5, -248))
+	Window.Size = Bracket.Utilities:GetType(Window.Size, "UDim2", UDim2.new(0, 496, 0, 496))
+
 	local WindowAsset = Bracket.Elements.Window(Window)
 
 	function Window:Tab(Tab)
-		Tab = Bracket.Utilities:GetType(Tab, {}, "table", true)
-		Tab.Name = Bracket.Utilities:GetType(Tab.Name, "Tab", "string")
-		local TabAsset = Bracket.Elements.Tab(WindowAsset, Window, Tab)
+		Tab = Bracket.Utilities:GetType(Tab, "table", {}, true)
+		Tab.Name = Bracket.Utilities:GetType(Tab.Name, "string", "Tab")
+
+		Bracket.Elements.Tab(WindowAsset, Window, Tab)
 
 		function Tab:AddConfigSection(FolderName, Side)
 			local ConfigSection = Tab:Section({Name = "Config System", Side = Side}) do
@@ -3672,7 +3797,7 @@ function Bracket:Window(Window)
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
 						Window:SaveConfig(FolderName, ConfigDropdown.Value[1])
 					else
-						Bracket:Notification({
+						Bracket:Push({
 							Title = "Config System",
 							Description = "Select Config First",
 							Duration = 10
@@ -3683,7 +3808,7 @@ function Bracket:Window(Window)
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
 						Window:LoadConfig(FolderName, ConfigDropdown.Value[1])
 					else
-						Bracket:Notification({
+						Bracket:Push({
 							Title = "Config System",
 							Description = "Select Config First",
 							Duration = 10
@@ -3695,7 +3820,7 @@ function Bracket:Window(Window)
 						Window:DeleteConfig(FolderName, ConfigDropdown.Value[1])
 						UpdateList()
 					else
-						Bracket:Notification({
+						Bracket:Push({
 							Title = "Config System",
 							Description = "Select Config First",
 							Duration = 10
@@ -3712,7 +3837,7 @@ function Bracket:Window(Window)
 						Window:AddToAutoLoad(FolderName, ConfigDropdown.Value[1])
 						ConfigDivider.Text = "AutoLoad Config\n<font color=\"rgb(189, 189, 189)\">[ " .. ConfigDropdown.Value[1] .. " ]</font>"
 					else
-						Bracket:Notification({
+						Bracket:Push({
 							Title = "Config System",
 							Description = "Select Config First",
 							Duration = 10
@@ -3726,269 +3851,269 @@ function Bracket:Window(Window)
 			end
 		end
 
-		function Tab:Divider(Divider)
-			Divider = Bracket.Utilities:GetType(Divider, {}, "table", true)
-			Divider.Text = Bracket.Utilities:GetType(Divider.Text, "", "string")
-			Bracket.Elements.Divider(Bracket.Utilities:ChooseTabSide(TabAsset, Divider.Side), Divider)
+		function Tab.Divider(Self, Divider)
+			Divider = Bracket.Utilities:GetType(Divider, "table", {}, true)
+			Divider.Text = Bracket.Utilities:GetType(Divider.Text, "string", "")
+
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Divider.Side) or Self.Container
+			Bracket.Elements.Divider(Parent, Divider)
 			return Divider
 		end
-		function Tab:Label(Label)
-			Label = Bracket.Utilities:GetType(Label, {}, "table", true)
-			Label.Text = Bracket.Utilities:GetType(Label.Text, "Label", "string")
-			Bracket.Elements.Label(Bracket.Utilities:ChooseTabSide(TabAsset, Label.Side), Label)
+		function Tab.Label(Self, Label)
+			Label = Bracket.Utilities:GetType(Label, "table", {}, true)
+			Label.Text = Bracket.Utilities:GetType(Label.Text, "string", "Label")
+
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Label.Side) or Self.Container
+			Bracket.Elements.Label(Parent, Label)
 			return Label
 		end
-		function Tab:Button(Button)
-			Button = Bracket.Utilities:GetType(Button, {}, "table", true)
-			Button.Name = Bracket.Utilities:GetType(Button.Name, "Button", "string")
-			Button.Callback = Bracket.Utilities:GetType(Button.Callback, function() end, "function")
-			Bracket.Elements.Button(Bracket.Utilities:ChooseTabSide(TabAsset, Button.Side), Window, Button)
+		function Tab.Button(Self, Button)
+			Button = Bracket.Utilities:GetType(Button, "table", {}, true)
+			Button.Name = Bracket.Utilities:GetType(Button.Name, "string", "Button")
+			Button.Callback = Bracket.Utilities:GetType(Button.Callback, "function", function() end)
+
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Button.Side) or Self.Container
+			Bracket.Elements.Button(Parent, Window, Button)
 			return Button
 		end
-		function Tab:Toggle(Toggle)
-			Toggle = Bracket.Utilities:GetType(Toggle, {}, "table", true)
-			Toggle.Name = Bracket.Utilities:GetType(Toggle.Name, "Toggle", "string")
-			Toggle.Flag = Bracket.Utilities:GetType(Toggle.Flag, Toggle.Name, "string")
+		function Tab.Toggle(Self, Toggle)
+			Toggle = Bracket.Utilities:GetType(Toggle, "table", {}, true)
+			Toggle.Name = Bracket.Utilities:GetType(Toggle.Name, "string", "Toggle")
+			Toggle.Flag = Bracket.Utilities:GetType(Toggle.Flag, "string", Toggle.Name)
 
-			Toggle.Value = Bracket.Utilities:GetType(Toggle.Value, false, "boolean")
-			Toggle.Callback = Bracket.Utilities:GetType(Toggle.Callback, function() end, "function")
+			Toggle.Value = Bracket.Utilities:GetType(Toggle.Value, "boolean", false)
+			Toggle.Callback = Bracket.Utilities:GetType(Toggle.Callback, "function", function() end)
+
 			Window.Elements[#Window.Elements + 1] = Toggle
 			Window.Flags[Toggle.Flag] = Toggle.Value
 
-			local ToggleAsset = Bracket.Elements.Toggle(Bracket.Utilities:ChooseTabSide(TabAsset, Toggle.Side), Window, Toggle)
-			function Toggle:Keybind(Keybind)
-				Keybind = Bracket.Utilities:GetType(Keybind, {}, "table", true)
-				Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, Toggle.Flag .. "/Keybind", "string")
-
-				Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "NONE", "string")
-				Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, false, "boolean")
-				Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, function() end, "function")
-				Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"}, "table")
-				Window.Elements[#Window.Elements + 1] = Keybind
-				Window.Flags[Keybind.Flag] = Keybind.Value
-
-				Bracket.Elements.ToggleKeybind(ToggleAsset.Layout, Window, Keybind, Toggle)
-				return Keybind
-			end
-			function Toggle:Colorpicker(Colorpicker)
-				Colorpicker = Bracket.Utilities:GetType(Colorpicker, {}, "table", true)
-				Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, Toggle.Flag .. "/Colorpicker", "string")
-
-				Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, {1, 1, 1, 0, false}, "table")
-				Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, function() end, "function")
-				Window.Elements[#Window.Elements + 1] = Colorpicker
-				Window.Flags[Colorpicker.Flag] = Colorpicker.Value
-
-				Bracket.Elements.ToggleColorpicker(ToggleAsset.Layout, Window, Colorpicker)
-				return Colorpicker
-			end
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Toggle.Side) or Self.Container
+			Bracket.Elements.Toggle(Parent, Window, Toggle)
 			return Toggle
 		end
-		function Tab:Slider(Slider)
-			Slider = Bracket.Utilities:GetType(Slider, {}, "table", true)
-			Slider.Name = Bracket.Utilities:GetType(Slider.Name, "Slider", "string")
-			Slider.Flag = Bracket.Utilities:GetType(Slider.Flag, Slider.Name, "string")
+		function Tab.Slider(Self, Slider)
+			Slider = Bracket.Utilities:GetType(Slider, "table", {}, true)
+			Slider.Name = Bracket.Utilities:GetType(Slider.Name, "string", "Slider")
+			Slider.Flag = Bracket.Utilities:GetType(Slider.Flag, "string", Slider.Name)
 
-			Slider.Min = Bracket.Utilities:GetType(Slider.Min, 0, "number")
-			Slider.Max = Bracket.Utilities:GetType(Slider.Max, 100, "number")
-			Slider.Precise = Bracket.Utilities:GetType(Slider.Precise, 0, "number")
-			Slider.Unit = Bracket.Utilities:GetType(Slider.Unit, "", "string")
-			Slider.Value = Bracket.Utilities:GetType(Slider.Value, Slider.Max / 2, "number")
-			Slider.Callback = Bracket.Utilities:GetType(Slider.Callback, function() end, "function")
+			Slider.Min = Bracket.Utilities:GetType(Slider.Min, "number", 0)
+			Slider.Max = Bracket.Utilities:GetType(Slider.Max, "number", 100)
+			Slider.Precise = Bracket.Utilities:GetType(Slider.Precise, "number", 0)
+			Slider.Unit = Bracket.Utilities:GetType(Slider.Unit, "string", "")
+			Slider.Value = Bracket.Utilities:GetType(Slider.Value, "number", Slider.Max / 2)
+			Slider.Callback = Bracket.Utilities:GetType(Slider.Callback, "function", function() end)
+
 			Window.Elements[#Window.Elements + 1] = Slider
 			Window.Flags[Slider.Flag] = Slider.Value
 
-			Bracket.Elements.Slider(Bracket.Utilities:ChooseTabSide(TabAsset, Slider.Side), Window, Slider)
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Slider.Side) or Self.Container
+			Bracket.Elements.Slider(Parent, Window, Slider)
 			return Slider
 		end
-		function Tab:Textbox(Textbox)
-			Textbox = Bracket.Utilities:GetType(Textbox, {}, "table", true)
-			Textbox.Name = Bracket.Utilities:GetType(Textbox.Name, "Textbox", "string")
-			Textbox.Flag = Bracket.Utilities:GetType(Textbox.Flag, Textbox.Name, "string")
+		function Tab.Textbox(Self, Textbox)
+			Textbox = Bracket.Utilities:GetType(Textbox, "table", {}, true)
+			Textbox.Name = Bracket.Utilities:GetType(Textbox.Name, "string", "Textbox")
+			Textbox.Flag = Bracket.Utilities:GetType(Textbox.Flag, "string", Textbox.Name)
 
-			Textbox.Value = Bracket.Utilities:GetType(Textbox.Value, "", "string")
-			Textbox.NumbersOnly = Bracket.Utilities:GetType(Textbox.NumbersOnly, false, "boolean")
-			Textbox.Placeholder = Bracket.Utilities:GetType(Textbox.Placeholder, "Input here", "string")
-			Textbox.Callback = Bracket.Utilities:GetType(Textbox.Callback, function() end, "function")
+			Textbox.Value = Bracket.Utilities:GetType(Textbox.Value, "string", "")
+			Textbox.NumbersOnly = Bracket.Utilities:GetType(Textbox.NumbersOnly, "boolean", false)
+			Textbox.Placeholder = Bracket.Utilities:GetType(Textbox.Placeholder, "string", "Input here")
+			Textbox.Callback = Bracket.Utilities:GetType(Textbox.Callback, "function", function() end)
+
 			Window.Elements[#Window.Elements + 1] = Textbox
 			Window.Flags[Textbox.Flag] = Textbox.Value
 
-			Bracket.Elements.Textbox(Bracket.Utilities:ChooseTabSide(TabAsset, Textbox.Side), Window, Textbox)
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Textbox.Side) or Self.Container
+			Bracket.Elements.Textbox(Parent, Window, Textbox)
 			return Textbox
 		end
-		function Tab:Keybind(Keybind)
-			Keybind = Bracket.Utilities:GetType(Keybind, {}, "table", true)
-			Keybind.Name = Bracket.Utilities:GetType(Keybind.Name, "Keybind", "string")
-			Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, Keybind.Name, "string")
+		function Tab.Keybind(Self, Keybind)
+			Keybind = Bracket.Utilities:GetType(Keybind, "table", {}, true)
+			Keybind.Name = Bracket.Utilities:GetType(Keybind.Name, "string", "Keybind")
+			Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, "string", Keybind.Name)
 
-			Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "NONE", "string")
-			Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, false, "boolean")
-			Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, function() end, "function")
-			Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"}, "table")
+			Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "string", "NONE")
+			Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, "boolean", false)
+			Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, "function", function() end)
+			Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, "table", {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"})
+
 			Window.Elements[#Window.Elements + 1] = Keybind
 			Window.Flags[Keybind.Flag] = Keybind.Value
 
-			Bracket.Elements.Keybind(Bracket.Utilities:ChooseTabSide(TabAsset, Keybind.Side), Window, Keybind)
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Keybind.Side) or Self.Container
+			Bracket.Elements.Keybind(Parent, Window, Keybind)
 			return Keybind
 		end
-		function Tab:Dropdown(Dropdown)
-			Dropdown = Bracket.Utilities:GetType(Dropdown, {}, "table", true)
-			Dropdown.Name = Bracket.Utilities:GetType(Dropdown.Name, "Dropdown", "string")
-			Dropdown.Flag = Bracket.Utilities:GetType(Dropdown.Flag, Dropdown.Name, "string")
-			Dropdown.List = Bracket.Utilities:GetType(Dropdown.List, {}, "table")
+		function Tab.Dropdown(Self, Dropdown)
+			Dropdown = Bracket.Utilities:GetType(Dropdown, "table", {}, true)
+			Dropdown.Name = Bracket.Utilities:GetType(Dropdown.Name, "string", "Dropdown")
+			Dropdown.Flag = Bracket.Utilities:GetType(Dropdown.Flag, "string", Dropdown.Name)
+			Dropdown.List = Bracket.Utilities:GetType(Dropdown.List, "table", {})
+
 			Window.Elements[#Window.Elements + 1] = Dropdown
 			Window.Flags[Dropdown.Flag] = Dropdown.Value
 
-			Bracket.Elements.Dropdown(Bracket.Utilities:ChooseTabSide(TabAsset, Dropdown.Side), Window, Dropdown)
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Dropdown.Side) or Self.Container
+			Bracket.Elements.Dropdown(Parent, Window, Dropdown)
 			return Dropdown
 		end
-		function Tab:Colorpicker(Colorpicker)
-			Colorpicker = Bracket.Utilities:GetType(Colorpicker, {}, "table", true)
-			Colorpicker.Name = Bracket.Utilities:GetType(Colorpicker.Name, "Colorpicker", "string")
-			Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, Colorpicker.Name, "string")
+		function Tab.Colorpicker(Self, Colorpicker)
+			Colorpicker = Bracket.Utilities:GetType(Colorpicker, "table", {}, true)
+			Colorpicker.Name = Bracket.Utilities:GetType(Colorpicker.Name, "string", "Colorpicker")
+			Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, "string", Colorpicker.Name)
 
-			Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, {1, 1, 1, 0, false}, "table")
-			Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, function() end, "function")
+			Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, "table", {1, 1, 1, 0, false})
+			Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, "function", function() end)
+
 			Window.Elements[#Window.Elements + 1] = Colorpicker
 			Window.Flags[Colorpicker.Flag] = Colorpicker.Value
 
-			Bracket.Elements.Colorpicker(Bracket.Utilities:ChooseTabSide(TabAsset, Colorpicker.Side), Window, Colorpicker)
+			local Parent = Self.Type == "Tab" and Bracket.Utilities:ChooseTabSide(Self.Asset, Colorpicker.Side) or Self.Container
+			Bracket.Elements.Colorpicker(Parent, Window, Colorpicker)
 			return Colorpicker
 		end
-		function Tab:Section(Section)
-			Section = Bracket.Utilities:GetType(Section, {}, "table", true)
-			Section.Name = Bracket.Utilities:GetType(Section.Name, "Section", "string")
-			local SectionContainer = Bracket.Elements.Section(Bracket.Utilities:ChooseTabSide(TabAsset, Section.Side), Section)
+		function Tab.Section(Self, Section)
+			Section = Bracket.Utilities:GetType(Section, "table", {}, true)
+			Section.Name = Bracket.Utilities:GetType(Section.Name, "string", "Section")
 
-			function Section:Divider(Divider)
-				Divider = Bracket.Utilities:GetType(Divider, {}, "table", true)
-				Divider.Text = Bracket.Utilities:GetType(Divider.Text, "", "string")
-				Bracket.Elements.Divider(SectionContainer, Divider)
-				return Divider
-			end
-			function Section:Label(Label)
-				Label = Bracket.Utilities:GetType(Label, {}, "table", true)
-				Label.Text = Bracket.Utilities:GetType(Label.Text, "Label", "string")
-				Bracket.Elements.Label(SectionContainer, Label)
-				return Label
-			end
-			function Section:Button(Button)
-				Button = Bracket.Utilities:GetType(Button, {}, "table", true)
-				Button.Name = Bracket.Utilities:GetType(Button.Name, "Button", "string")
-				Button.Callback = Bracket.Utilities:GetType(Button.Callback, function() end, "function")
-				Bracket.Elements.Button(SectionContainer, Window, Button)
-				return Button
-			end
-			function Section:Toggle(Toggle)
-				Toggle = Bracket.Utilities:GetType(Toggle, {}, "table", true)
-				Toggle.Name = Bracket.Utilities:GetType(Toggle.Name, "Toggle", "string")
-				Toggle.Flag = Bracket.Utilities:GetType(Toggle.Flag, Toggle.Name, "string")
+			local Parent = Bracket.Utilities:ChooseTabSide(Self.Asset, Section.Side)
+			Bracket.Elements.Section(Parent, Section)
 
-				Toggle.Value = Bracket.Utilities:GetType(Toggle.Value, false, "boolean")
-				Toggle.Callback = Bracket.Utilities:GetType(Toggle.Callback, function() end, "function")
-				Window.Elements[#Window.Elements + 1] = Toggle
-				Window.Flags[Toggle.Flag] = Toggle.Value
-
-				local ToggleAsset = Bracket.Elements.Toggle(SectionContainer, Window, Toggle)
-				function Toggle:Keybind(Keybind)
-					Keybind = Bracket.Utilities:GetType(Keybind, {}, "table", true)
-					Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, Toggle.Flag .. "/Keybind", "string")
-
-					Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "NONE", "string")
-					Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, false, "boolean")
-					Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, function() end, "function")
-					Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"}, "table")
-					Window.Elements[#Window.Elements + 1] = Keybind
-					Window.Flags[Keybind.Flag] = Keybind.Value
-
-					Bracket.Elements.ToggleKeybind(ToggleAsset.Layout, Window, Keybind, Toggle)
-					return Keybind
+			for Index, Value in pairs(Self.Internal) do
+				if type(Value) == "function" and Index ~= "Section" then
+					Section.Internal[Index] = Value
 				end
-				function Toggle:Colorpicker(Colorpicker)
-					Colorpicker = Bracket.Utilities:GetType(Colorpicker, {}, "table", true)
-					Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, Toggle.Flag .. "/Colorpicker", "string")
-
-					Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, {1, 1, 1, 0, false}, "table")
-					Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, function() end, "function")
-					Window.Elements[#Window.Elements + 1] = Colorpicker
-					Window.Flags[Colorpicker.Flag] = Colorpicker.Value
-
-					Bracket.Elements.ToggleColorpicker(ToggleAsset.Layout, Window, Colorpicker)
-					return Colorpicker
-				end
-				return Toggle
 			end
-			function Section:Slider(Slider)
-				Slider = Bracket.Utilities:GetType(Slider, {}, "table", true)
-				Slider.Name = Bracket.Utilities:GetType(Slider.Name, "Slider", "string")
-				Slider.Flag = Bracket.Utilities:GetType(Slider.Flag, Slider.Name, "string")
 
-				Slider.Min = Bracket.Utilities:GetType(Slider.Min, 0, "number")
-				Slider.Max = Bracket.Utilities:GetType(Slider.Max, 100, "number")
-				Slider.Precise = Bracket.Utilities:GetType(Slider.Precise, 0, "number")
-				Slider.Unit = Bracket.Utilities:GetType(Slider.Unit, "", "string")
-				Slider.Value = Bracket.Utilities:GetType(Slider.Value, Slider.Max / 2, "number")
-				Slider.Callback = Bracket.Utilities:GetType(Slider.Callback, function() end, "function")
-				Window.Elements[#Window.Elements + 1] = Slider
-				Window.Flags[Slider.Flag] = Slider.Value
+			-- function Section:Divider(Divider)
+			-- 	Divider = Bracket.Utilities:GetType(Divider, {}, "table", true)
+			-- 	Divider.Text = Bracket.Utilities:GetType(Divider.Text, "", "string")
+			-- 	Bracket.Elements.Divider(SectionContainer, Divider)
+			-- 	return Divider
+			-- end
+			-- function Section:Label(Label)
+			-- 	Label = Bracket.Utilities:GetType(Label, {}, "table", true)
+			-- 	Label.Text = Bracket.Utilities:GetType(Label.Text, "Label", "string")
+			-- 	Bracket.Elements.Label(SectionContainer, Label)
+			-- 	return Label
+			-- end
+			-- function Section:Button(Button)
+			-- 	Button = Bracket.Utilities:GetType(Button, {}, "table", true)
+			-- 	Button.Name = Bracket.Utilities:GetType(Button.Name, "Button", "string")
+			-- 	Button.Callback = Bracket.Utilities:GetType(Button.Callback, function() end, "function")
+			-- 	Bracket.Elements.Button(SectionContainer, Window, Button)
+			-- 	return Button
+			-- end
+			-- function Section:Toggle(Toggle)
+			-- 	Toggle = Bracket.Utilities:GetType(Toggle, {}, "table", true)
+			-- 	Toggle.Name = Bracket.Utilities:GetType(Toggle.Name, "Toggle", "string")
+			-- 	Toggle.Flag = Bracket.Utilities:GetType(Toggle.Flag, Toggle.Name, "string")
 
-				Bracket.Elements.Slider(SectionContainer, Window, Slider)
-				return Slider
-			end
-			function Section:Textbox(Textbox)
-				Textbox = Bracket.Utilities:GetType(Textbox, {}, "table", true)
-				Textbox.Name = Bracket.Utilities:GetType(Textbox.Name, "Textbox", "string")
-				Textbox.Flag = Bracket.Utilities:GetType(Textbox.Flag, Textbox.Name, "string")
+			-- 	Toggle.Value = Bracket.Utilities:GetType(Toggle.Value, false, "boolean")
+			-- 	Toggle.Callback = Bracket.Utilities:GetType(Toggle.Callback, function() end, "function")
+			-- 	Window.Elements[#Window.Elements + 1] = Toggle
+			-- 	Window.Flags[Toggle.Flag] = Toggle.Value
 
-				Textbox.Value = Bracket.Utilities:GetType(Textbox.Value, "", "string")
-				Textbox.NumbersOnly = Bracket.Utilities:GetType(Textbox.NumbersOnly, false, "boolean")
-				Textbox.Placeholder = Bracket.Utilities:GetType(Textbox.Placeholder, "Input here", "string")
-				Textbox.Callback = Bracket.Utilities:GetType(Textbox.Callback, function() end, "function")
-				Window.Elements[#Window.Elements + 1] = Textbox
-				Window.Flags[Textbox.Flag] = Textbox.Value
+			-- 	local ToggleAsset = Bracket.Elements.Toggle(SectionContainer, Window, Toggle)
+			-- 	function Toggle:Keybind(Keybind)
+			-- 		Keybind = Bracket.Utilities:GetType(Keybind, {}, "table", true)
+			-- 		Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, Toggle.Flag .. "/Keybind", "string")
 
-				Bracket.Elements.Textbox(SectionContainer, Window, Textbox)
-				return Textbox
-			end
-			function Section:Keybind(Keybind)
-				Keybind = Bracket.Utilities:GetType(Keybind, {}, "table", true)
-				Keybind.Name = Bracket.Utilities:GetType(Keybind.Name, "Keybind", "string")
-				Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, Keybind.Name, "string")
+			-- 		Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "NONE", "string")
+			-- 		Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, false, "boolean")
+			-- 		Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, function() end, "function")
+			-- 		Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"}, "table")
+			-- 		Window.Elements[#Window.Elements + 1] = Keybind
+			-- 		Window.Flags[Keybind.Flag] = Keybind.Value
 
-				Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "NONE", "string")
-				Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, false, "boolean")
-				Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, function() end, "function")
-				Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"}, "table")
-				Window.Elements[#Window.Elements + 1] = Keybind
-				Window.Flags[Keybind.Flag] = Keybind.Value
+			-- 		Bracket.Elements.ToggleKeybind(ToggleAsset.Layout, Window, Keybind, Toggle)
+			-- 		return Keybind
+			-- 	end
+			-- 	function Toggle:Colorpicker(Colorpicker)
+			-- 		Colorpicker = Bracket.Utilities:GetType(Colorpicker, {}, "table", true)
+			-- 		Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, Toggle.Flag .. "/Colorpicker", "string")
 
-				Bracket.Elements.Keybind(SectionContainer, Window, Keybind)
-				return Keybind
-			end
-			function Section:Dropdown(Dropdown)
-				Dropdown = Bracket.Utilities:GetType(Dropdown, {}, "table", true)
-				Dropdown.Name = Bracket.Utilities:GetType(Dropdown.Name, "Dropdown", "string")
-				Dropdown.Flag = Bracket.Utilities:GetType(Dropdown.Flag, Dropdown.Name, "string")
-				Dropdown.List = Bracket.Utilities:GetType(Dropdown.List, {}, "table")
-				Window.Elements[#Window.Elements + 1] = Dropdown
-				Window.Flags[Dropdown.Flag] = Dropdown.Value
+			-- 		Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, {1, 1, 1, 0, false}, "table")
+			-- 		Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, function() end, "function")
+			-- 		Window.Elements[#Window.Elements + 1] = Colorpicker
+			-- 		Window.Flags[Colorpicker.Flag] = Colorpicker.Value
 
-				Bracket.Elements.Dropdown(SectionContainer, Window, Dropdown)
-				return Dropdown
-			end
-			function Section:Colorpicker(Colorpicker)
-				Colorpicker = Bracket.Utilities:GetType(Colorpicker, {}, "table", true)
-				Colorpicker.Name = Bracket.Utilities:GetType(Colorpicker.Name, "Colorpicker", "string")
-				Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, Colorpicker.Name, "string")
+			-- 		Bracket.Elements.ToggleColorpicker(ToggleAsset.Layout, Window, Colorpicker)
+			-- 		return Colorpicker
+			-- 	end
+			-- 	return Toggle
+			-- end
+			-- function Section:Slider(Slider)
+			-- 	Slider = Bracket.Utilities:GetType(Slider, {}, "table", true)
+			-- 	Slider.Name = Bracket.Utilities:GetType(Slider.Name, "Slider", "string")
+			-- 	Slider.Flag = Bracket.Utilities:GetType(Slider.Flag, Slider.Name, "string")
 
-				Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, {1, 1, 1, 0, false}, "table")
-				Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, function() end, "function")
-				Window.Elements[#Window.Elements + 1] = Colorpicker
-				Window.Flags[Colorpicker.Flag] = Colorpicker.Value
+			-- 	Slider.Min = Bracket.Utilities:GetType(Slider.Min, 0, "number")
+			-- 	Slider.Max = Bracket.Utilities:GetType(Slider.Max, 100, "number")
+			-- 	Slider.Precise = Bracket.Utilities:GetType(Slider.Precise, 0, "number")
+			-- 	Slider.Unit = Bracket.Utilities:GetType(Slider.Unit, "", "string")
+			-- 	Slider.Value = Bracket.Utilities:GetType(Slider.Value, Slider.Max / 2, "number")
+			-- 	Slider.Callback = Bracket.Utilities:GetType(Slider.Callback, function() end, "function")
+			-- 	Window.Elements[#Window.Elements + 1] = Slider
+			-- 	Window.Flags[Slider.Flag] = Slider.Value
 
-				Bracket.Elements.Colorpicker(SectionContainer, Window, Colorpicker)
-				return Colorpicker
-			end
+			-- 	Bracket.Elements.Slider(SectionContainer, Window, Slider)
+			-- 	return Slider
+			-- end
+			-- function Section:Textbox(Textbox)
+			-- 	Textbox = Bracket.Utilities:GetType(Textbox, {}, "table", true)
+			-- 	Textbox.Name = Bracket.Utilities:GetType(Textbox.Name, "Textbox", "string")
+			-- 	Textbox.Flag = Bracket.Utilities:GetType(Textbox.Flag, Textbox.Name, "string")
+
+			-- 	Textbox.Value = Bracket.Utilities:GetType(Textbox.Value, "", "string")
+			-- 	Textbox.NumbersOnly = Bracket.Utilities:GetType(Textbox.NumbersOnly, false, "boolean")
+			-- 	Textbox.Placeholder = Bracket.Utilities:GetType(Textbox.Placeholder, "Input here", "string")
+			-- 	Textbox.Callback = Bracket.Utilities:GetType(Textbox.Callback, function() end, "function")
+			-- 	Window.Elements[#Window.Elements + 1] = Textbox
+			-- 	Window.Flags[Textbox.Flag] = Textbox.Value
+
+			-- 	Bracket.Elements.Textbox(SectionContainer, Window, Textbox)
+			-- 	return Textbox
+			-- end
+			-- function Section:Keybind(Keybind)
+			-- 	Keybind = Bracket.Utilities:GetType(Keybind, {}, "table", true)
+			-- 	Keybind.Name = Bracket.Utilities:GetType(Keybind.Name, "Keybind", "string")
+			-- 	Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, Keybind.Name, "string")
+
+			-- 	Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "NONE", "string")
+			-- 	Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, false, "boolean")
+			-- 	Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, function() end, "function")
+			-- 	Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"}, "table")
+			-- 	Window.Elements[#Window.Elements + 1] = Keybind
+			-- 	Window.Flags[Keybind.Flag] = Keybind.Value
+
+			-- 	Bracket.Elements.Keybind(SectionContainer, Window, Keybind)
+			-- 	return Keybind
+			-- end
+			-- function Section:Dropdown(Dropdown)
+			-- 	Dropdown = Bracket.Utilities:GetType(Dropdown, {}, "table", true)
+			-- 	Dropdown.Name = Bracket.Utilities:GetType(Dropdown.Name, "Dropdown", "string")
+			-- 	Dropdown.Flag = Bracket.Utilities:GetType(Dropdown.Flag, Dropdown.Name, "string")
+			-- 	Dropdown.List = Bracket.Utilities:GetType(Dropdown.List, {}, "table")
+			-- 	Window.Elements[#Window.Elements + 1] = Dropdown
+			-- 	Window.Flags[Dropdown.Flag] = Dropdown.Value
+
+			-- 	Bracket.Elements.Dropdown(SectionContainer, Window, Dropdown)
+			-- 	return Dropdown
+			-- end
+			-- function Section:Colorpicker(Colorpicker)
+			-- 	Colorpicker = Bracket.Utilities:GetType(Colorpicker, {}, "table", true)
+			-- 	Colorpicker.Name = Bracket.Utilities:GetType(Colorpicker.Name, "Colorpicker", "string")
+			-- 	Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, Colorpicker.Name, "string")
+
+			-- 	Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, {1, 1, 1, 0, false}, "table")
+			-- 	Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, function() end, "function")
+			-- 	Window.Elements[#Window.Elements + 1] = Colorpicker
+			-- 	Window.Flags[Colorpicker.Flag] = Colorpicker.Value
+
+			-- 	Bracket.Elements.Colorpicker(SectionContainer, Window, Colorpicker)
+			-- 	return Colorpicker
+			-- end
 			return Section
 		end
 		return Tab
@@ -3997,9 +4122,9 @@ function Bracket:Window(Window)
 end
 
 function Bracket:Push(Notification)
-	Notification = Bracket.Utilities:GetType(Notification, {}, "table")
-	Notification.Title = Bracket.Utilities:GetType(Notification.Title, "Title", "string")
-	Notification.Description = Bracket.Utilities:GetType(Notification.Description, "Description", "string")
+	Notification = Bracket.Utilities:GetType(Notification, "table", {})
+	Notification.Title = Bracket.Utilities:GetType(Notification.Title, "string", "Title")
+	Notification.Description = Bracket.Utilities:GetType(Notification.Description, "string", "Description")
 
 	local NotificationAsset = Bracket.Assets.PushNotification()
 	NotificationAsset.Parent = Bracket.Screen.PNContainer
@@ -4035,10 +4160,10 @@ function Bracket:Push(Notification)
 end
 
 function Bracket:Toast(Notification)
-	Notification = Bracket.Utilities:GetType(Notification, {}, "table")
-	Notification.Title = Bracket.Utilities:GetType(Notification.Title, "Title", "string")
-	Notification.Duration = Bracket.Utilities:GetType(Notification.Duration, 5, "number")
-	Notification.Color = Bracket.Utilities:GetType(Notification.Color, Color3.new(1, 0.5, 0.25), "Color3")
+	Notification = Bracket.Utilities:GetType(Notification, "table", {})
+	Notification.Title = Bracket.Utilities:GetType(Notification.Title, "string", "Title")
+	Notification.Duration = Bracket.Utilities:GetType(Notification.Duration, "number", 5)
+	Notification.Color = Bracket.Utilities:GetType(Notification.Color, "Color3", Color3.new(1, 0.5, 0.25))
 
 	local NotificationAsset = Bracket.Assets.ToastNotification()
 	NotificationAsset.Parent = Bracket.Screen.TNContainer
