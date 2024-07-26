@@ -8,7 +8,23 @@ local CoreGui = game:GetService("CoreGui")
 
 local GuiInset = GuiService:GetGuiInset()
 local LocalPlayer = PlayerService.LocalPlayer
-local Bracket = {IsLocal = not identifyexecutor}
+
+local Bracket = {
+	Screen = nil,
+	IsLocal = not identifyexecutor,
+
+	SectionInclude = {
+		"Divider",
+		"Label",
+		"Button",
+		"Toggle",
+		"Slider",
+		"Textbox",
+		"Keybind",
+		"Dropdown",
+		"Colorpicker"
+	}
+}
 
 Bracket.Utilities = {
 	TableToColor = function(Table)
@@ -22,6 +38,7 @@ Bracket.Utilities = {
 		return OutputMin + (Value - InputMin) * (OutputMax - OutputMin) / (InputMax - InputMin)
 	end,
 	DeepCopy = function(Self, Original)
+		if type(Original) ~= "table" then return Original end
 		local Copy = {}
 
 		for Index, Value in pairs(Original) do
@@ -34,13 +51,42 @@ Bracket.Utilities = {
 
 		return Copy
 	end,
+	DeepEquals = function(Self, Object1, Object2)
+		if Object1 == Object2 then return true end
+
+		local Object1Type = type(Object1)
+		local Object2Type = type(Object2)
+
+		if Object1Type ~= Object2Type then return false end
+		if Object1Type ~= "table" then return false end
+
+		local KeySet = {}
+
+		for Key1, Value1 in Object1 do
+			local Value2 = Object2[Key1]
+
+			if Value2 == nil or Self:DeepEquals(Value1, Value2) == false then
+				return false
+			end
+
+			KeySet[Key1] = true
+		end
+
+		for Key2 in Object2 do
+			if not KeySet[Key2] then
+				return false
+			end
+		end
+
+		return true
+	end,
 	Proxify = function(Table)
 		local Proxy, Events = {}, {}
 		local ChangedEvent = Instance.new("BindableEvent")
 		Proxy.Changed = ChangedEvent.Event
 		Proxy.Internal = Table
 
-		function Table:GetPropertyChangedSignal(Property)
+		function Proxy:GetPropertyChangedSignal(Property)
 			local PropertyEvent = Instance.new("BindableEvent")
 
 			Events[Property] = Events[Property] or {}
@@ -2192,10 +2238,12 @@ Bracket.Assets = {
 Bracket.Elements = {
 	Screen = function()
 		local ScreenAsset = Bracket.Assets:Screen()
+
 		if not Bracket.IsLocal then sethiddenproperty(ScreenAsset, "OnTopOfCoreBlur", true) end
 		ScreenAsset.Name = "Bracket " .. game:GetService("HttpService"):GenerateGUID(false)
 		ScreenAsset.Parent = Bracket.IsLocal and LocalPlayer:FindFirstChildOfClass("PlayerGui") or CoreGui
-		Bracket.Screen = ScreenAsset
+
+		return ScreenAsset
 	end,
 	Window = function(Window)
 		local WindowAsset = Bracket.Assets.Window()
@@ -2206,6 +2254,43 @@ Bracket.Elements = {
 		Window.Type = "Window"
 		Window.Asset = WindowAsset
 		Window.Background = Window.Asset.Background
+
+		local Flags = {}
+		local FlagsExclude = {}
+
+		local function IncrementKey(BaseKey)
+			local Suffix = 1
+			local NewKey = `{BaseKey}-{Suffix}`
+
+			while Flags[NewKey] ~= nil do
+				Suffix += 1
+				NewKey = `{BaseKey}-{Suffix}`
+			end
+
+			return NewKey
+		end
+
+		setmetatable(Window.Flags, {
+			__index = function(Self, Key)
+				return Flags[Key]
+			end,
+			__newindex = function(Self, Key, Value)
+				local Element = Window.Elements[#Window.Elements]
+				if Flags[Key] ~= nil and not table.find(FlagsExclude, Element) then
+					local IncrementedKey = IncrementKey(Key)
+					warn(`Flag {Key} already exists. Renaming to {IncrementedKey}`)
+					local Element = Window.Elements[#Window.Elements]
+					if Element.Flag then Element.Flag = IncrementedKey end
+					table.insert(FlagsExclude, Element)
+					Flags[IncrementedKey] = Value
+					return
+				else
+					table.insert(FlagsExclude, Element)
+					Flags[Key] = Value
+					return
+				end
+			end
+		})
 
 		WindowAsset.Parent = Bracket.Screen
 		WindowAsset.Visible = Window.Enabled
@@ -2294,6 +2379,7 @@ Bracket.Elements = {
 			Watermark.Flag = Bracket.Utilities:GetType(Watermark.Flag, "string", "UI/Watermark/Position")
 
 			Watermark.Type = "Watermark"
+			Watermark.Asset = Bracket.Screen.Watermark
 
 			Bracket.Screen.Watermark.Visible = Watermark.Enabled
 			Bracket.Screen.Watermark.Text = Watermark.Title
@@ -2408,7 +2494,7 @@ Bracket.Elements = {
 				end
 			end
 
-			--Self.Elements[#Self.Elements + 1] = KeybindList
+			Self.Elements[#Self.Elements + 1] = KeybindList
 			Self.KeybindList = KeybindList
 			return KeybindList
 		end
@@ -2417,7 +2503,17 @@ Bracket.Elements = {
 			local Config = {}
 			for Index, Element in pairs(Self.Elements) do
 				if Element.Flag and not Element.IgnoreFlag then
-					Config[Element.Flag] = Self.Flags[Element.Flag]
+					local Value = Self.Flags[Element.Flag]
+
+					if Element.Type == "Colorpicker" then
+						Value = {Value[5] == true and 1 or Value[1], Value[2], Value[3], Value[4], Value[5]}
+					end
+
+					if Bracket.Utilities:DeepEquals(Element.Default, Value) then
+						continue
+					end
+
+					Config[Element.Flag] = Value
 				end
 			end
 			writefile(
@@ -2702,6 +2798,8 @@ Bracket.Elements = {
 		Toggle.ColorConfig = {Toggle.Value, "BackgroundColor3"}
 		Window.Colorable[ToggleAsset.Tick] = Toggle.ColorConfig
 
+		Toggle.Default = Bracket.Utilities:DeepCopy(Toggle.Value)
+
 		ToggleAsset.Parent = Parent
 		ToggleAsset.Title.Text = Toggle.Name
 		ToggleAsset.Tick.BackgroundColor3 = Toggle.Value
@@ -2771,6 +2869,7 @@ Bracket.Elements = {
 		Window.Colorable[SliderAsset.Background.Bar] = Slider.ColorConfig
 
 		Slider.Value = tonumber(string.format("%." .. Slider.Precise .. "f", Slider.Value))
+		Slider.Default = Bracket.Utilities:DeepCopy(Slider.Value)
 		Slider.Active = false
 
 		SliderAsset.Parent = Parent
@@ -2868,6 +2967,7 @@ Bracket.Elements = {
 		Textbox.Type = "Textbox"
 		Textbox.Asset = TextboxAsset
 
+		Textbox.Default = Bracket.Utilities:DeepCopy(Textbox.Value)
 		Textbox.EnterPressed = false
 
 		TextboxAsset.Parent = Parent
@@ -2941,6 +3041,7 @@ Bracket.Elements = {
 		Keybind.Type = "Keybind"
 		Keybind.Asset = KeybindAsset
 
+		Keybind.Default = Bracket.Utilities:DeepCopy(Keybind.Value)
 		Keybind.WaitingForBind = false
 
 		KeybindAsset.Parent = Parent
@@ -3074,6 +3175,7 @@ Bracket.Elements = {
 		Keybind.Type = "Keybind"
 		Keybind.Asset = KeybindAsset
 
+		Keybind.Default = Bracket.Utilities:DeepCopy(Keybind.Value)
 		Keybind.WaitingForBind = false
 		Keybind.Toggle = Toggle
 
@@ -3361,6 +3463,7 @@ Bracket.Elements = {
 			if Option.Value then Option.Value = true end
 		end
 		RefreshSelected()
+		Dropdown.Default = Bracket.Utilities:DeepCopy(Dropdown.Value)
 
 		function Dropdown:BulkAdd(Table)
 			for Index, Option in pairs(Table) do
@@ -3413,6 +3516,9 @@ Bracket.Elements = {
 
 		Colorpicker.ColorConfig = {Colorpicker.Value[5], "BackgroundColor3"}
 		Window.Colorable[PaletteAsset.Rainbow.Tick] = Colorpicker.ColorConfig
+
+		Colorpicker.Default = Bracket.Utilities:DeepCopy(Colorpicker.Value)
+
 		local PaletteRender, SVRender, HueRender, AlphaRender = nil, nil, nil, nil
 
 		ColorpickerAsset.Parent = Parent
@@ -3594,6 +3700,9 @@ Bracket.Elements = {
 
 		Colorpicker.ColorConfig = {Colorpicker.Value[5], "BackgroundColor3"}
 		Window.Colorable[PaletteAsset.Rainbow.Tick] = Colorpicker.ColorConfig
+
+		Colorpicker.Default = Bracket.Utilities:DeepCopy(Colorpicker.Value)
+
 		local PaletteRender, SVRender, HueRender, AlphaRender = nil, nil, nil, nil
 
 		ColorpickerAsset.Parent = Parent
@@ -3754,7 +3863,6 @@ Bracket.Elements = {
 	end
 }
 
-Bracket.Elements.Screen()
 function Bracket:Window(Window)
 	Window = Bracket.Utilities:GetType(Window, "table", {}, true)
 	Window.Blur = Bracket.Utilities:GetType(Window.Blur, "boolean", false)
@@ -3772,20 +3880,26 @@ function Bracket:Window(Window)
 
 		Bracket.Elements.Tab(WindowAsset, Window, Tab)
 
-		function Tab:AddConfigSection(FolderName, Side)
-			local ConfigSection = Tab:Section({Name = "Config System", Side = Side}) do
-				local ConfigList, ConfigDropdown = Bracket.Utilities.ConfigsToList(FolderName), nil
-				local ALConfig = Window:GetAutoLoadConfig(FolderName)
+		function Tab.AddConfigSection(Self, FolderName, Side)
+			local ConfigSection = Self:Section({Name = "Config System", Side = Side}) do
+				local ConfigList = Bracket.Utilities.ConfigsToList(FolderName)
+				local AutoLoadConfig = Window:GetAutoLoadConfig(FolderName)
 
-				local function UpdateList(Name) ConfigDropdown:Clear()
-					ConfigList = Bracket.Utilities.ConfigsToList(FolderName) ConfigDropdown:BulkAdd(ConfigList)
+				local ConfigDropdown = nil
+				local ConfigTextbox = nil
+
+				local function UpdateConfigList(Name)
+					ConfigDropdown:Clear()
+					ConfigList = Bracket.Utilities.ConfigsToList(FolderName)
+					ConfigDropdown:BulkAdd(ConfigList)
 					ConfigDropdown.Value = {}
 					--ConfigDropdown.Value = {Name or (ConfigList[#ConfigList] and ConfigList[#ConfigList].Name)}
 				end
 
-				local ConfigTextbox = ConfigSection:Textbox({HideName = true, Placeholder = "Config Name", IgnoreFlag = true})
+				ConfigTextbox = ConfigSection:Textbox({HideName = true, Placeholder = "Config Name", IgnoreFlag = true})
 				ConfigSection:Button({Name = "Create", Callback = function()
-					Window:SaveConfig(FolderName, ConfigTextbox.Value) UpdateList(ConfigTextbox.Value)
+					Window:SaveConfig(FolderName, ConfigTextbox.Value)
+					UpdateConfigList(ConfigTextbox.Value)
 				end})
 
 				ConfigSection:Divider({Text = "Configs"})
@@ -3818,7 +3932,7 @@ function Bracket:Window(Window)
 				ConfigSection:Button({Name = "Delete", Callback = function()
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
 						Window:DeleteConfig(FolderName, ConfigDropdown.Value[1])
-						UpdateList()
+						UpdateConfigList()
 					else
 						Bracket:Push({
 							Title = "Config System",
@@ -3827,10 +3941,10 @@ function Bracket:Window(Window)
 						})
 					end
 				end})
-				ConfigSection:Button({Name = "Refresh", Callback = UpdateList})
+				ConfigSection:Button({Name = "Refresh", Callback = UpdateConfigList})
 
-				local ConfigDivider = ConfigSection:Divider({Text = not ALConfig and "AutoLoad Config"
-					or "AutoLoad Config\n<font color=\"rgb(189, 189, 189)\">[ " .. ALConfig .. " ]</font>"})
+				local ConfigDivider = ConfigSection:Divider({Text = not AutoLoadConfig and "AutoLoad Config"
+					or "AutoLoad Config\n<font color=\"rgb(189, 189, 189)\">[ " .. AutoLoadConfig .. " ]</font>"})
 
 				ConfigSection:Button({Name = "Set AutoLoad Config", Callback = function()
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
@@ -3980,140 +4094,11 @@ function Bracket:Window(Window)
 			Bracket.Elements.Section(Parent, Section)
 
 			for Index, Value in pairs(Self.Internal) do
-				if type(Value) == "function" and Index ~= "Section" then
+				if table.find(Bracket.SectionInclude, Index) then
 					Section.Internal[Index] = Value
 				end
 			end
 
-			-- function Section:Divider(Divider)
-			-- 	Divider = Bracket.Utilities:GetType(Divider, {}, "table", true)
-			-- 	Divider.Text = Bracket.Utilities:GetType(Divider.Text, "", "string")
-			-- 	Bracket.Elements.Divider(SectionContainer, Divider)
-			-- 	return Divider
-			-- end
-			-- function Section:Label(Label)
-			-- 	Label = Bracket.Utilities:GetType(Label, {}, "table", true)
-			-- 	Label.Text = Bracket.Utilities:GetType(Label.Text, "Label", "string")
-			-- 	Bracket.Elements.Label(SectionContainer, Label)
-			-- 	return Label
-			-- end
-			-- function Section:Button(Button)
-			-- 	Button = Bracket.Utilities:GetType(Button, {}, "table", true)
-			-- 	Button.Name = Bracket.Utilities:GetType(Button.Name, "Button", "string")
-			-- 	Button.Callback = Bracket.Utilities:GetType(Button.Callback, function() end, "function")
-			-- 	Bracket.Elements.Button(SectionContainer, Window, Button)
-			-- 	return Button
-			-- end
-			-- function Section:Toggle(Toggle)
-			-- 	Toggle = Bracket.Utilities:GetType(Toggle, {}, "table", true)
-			-- 	Toggle.Name = Bracket.Utilities:GetType(Toggle.Name, "Toggle", "string")
-			-- 	Toggle.Flag = Bracket.Utilities:GetType(Toggle.Flag, Toggle.Name, "string")
-
-			-- 	Toggle.Value = Bracket.Utilities:GetType(Toggle.Value, false, "boolean")
-			-- 	Toggle.Callback = Bracket.Utilities:GetType(Toggle.Callback, function() end, "function")
-			-- 	Window.Elements[#Window.Elements + 1] = Toggle
-			-- 	Window.Flags[Toggle.Flag] = Toggle.Value
-
-			-- 	local ToggleAsset = Bracket.Elements.Toggle(SectionContainer, Window, Toggle)
-			-- 	function Toggle:Keybind(Keybind)
-			-- 		Keybind = Bracket.Utilities:GetType(Keybind, {}, "table", true)
-			-- 		Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, Toggle.Flag .. "/Keybind", "string")
-
-			-- 		Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "NONE", "string")
-			-- 		Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, false, "boolean")
-			-- 		Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, function() end, "function")
-			-- 		Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"}, "table")
-			-- 		Window.Elements[#Window.Elements + 1] = Keybind
-			-- 		Window.Flags[Keybind.Flag] = Keybind.Value
-
-			-- 		Bracket.Elements.ToggleKeybind(ToggleAsset.Layout, Window, Keybind, Toggle)
-			-- 		return Keybind
-			-- 	end
-			-- 	function Toggle:Colorpicker(Colorpicker)
-			-- 		Colorpicker = Bracket.Utilities:GetType(Colorpicker, {}, "table", true)
-			-- 		Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, Toggle.Flag .. "/Colorpicker", "string")
-
-			-- 		Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, {1, 1, 1, 0, false}, "table")
-			-- 		Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, function() end, "function")
-			-- 		Window.Elements[#Window.Elements + 1] = Colorpicker
-			-- 		Window.Flags[Colorpicker.Flag] = Colorpicker.Value
-
-			-- 		Bracket.Elements.ToggleColorpicker(ToggleAsset.Layout, Window, Colorpicker)
-			-- 		return Colorpicker
-			-- 	end
-			-- 	return Toggle
-			-- end
-			-- function Section:Slider(Slider)
-			-- 	Slider = Bracket.Utilities:GetType(Slider, {}, "table", true)
-			-- 	Slider.Name = Bracket.Utilities:GetType(Slider.Name, "Slider", "string")
-			-- 	Slider.Flag = Bracket.Utilities:GetType(Slider.Flag, Slider.Name, "string")
-
-			-- 	Slider.Min = Bracket.Utilities:GetType(Slider.Min, 0, "number")
-			-- 	Slider.Max = Bracket.Utilities:GetType(Slider.Max, 100, "number")
-			-- 	Slider.Precise = Bracket.Utilities:GetType(Slider.Precise, 0, "number")
-			-- 	Slider.Unit = Bracket.Utilities:GetType(Slider.Unit, "", "string")
-			-- 	Slider.Value = Bracket.Utilities:GetType(Slider.Value, Slider.Max / 2, "number")
-			-- 	Slider.Callback = Bracket.Utilities:GetType(Slider.Callback, function() end, "function")
-			-- 	Window.Elements[#Window.Elements + 1] = Slider
-			-- 	Window.Flags[Slider.Flag] = Slider.Value
-
-			-- 	Bracket.Elements.Slider(SectionContainer, Window, Slider)
-			-- 	return Slider
-			-- end
-			-- function Section:Textbox(Textbox)
-			-- 	Textbox = Bracket.Utilities:GetType(Textbox, {}, "table", true)
-			-- 	Textbox.Name = Bracket.Utilities:GetType(Textbox.Name, "Textbox", "string")
-			-- 	Textbox.Flag = Bracket.Utilities:GetType(Textbox.Flag, Textbox.Name, "string")
-
-			-- 	Textbox.Value = Bracket.Utilities:GetType(Textbox.Value, "", "string")
-			-- 	Textbox.NumbersOnly = Bracket.Utilities:GetType(Textbox.NumbersOnly, false, "boolean")
-			-- 	Textbox.Placeholder = Bracket.Utilities:GetType(Textbox.Placeholder, "Input here", "string")
-			-- 	Textbox.Callback = Bracket.Utilities:GetType(Textbox.Callback, function() end, "function")
-			-- 	Window.Elements[#Window.Elements + 1] = Textbox
-			-- 	Window.Flags[Textbox.Flag] = Textbox.Value
-
-			-- 	Bracket.Elements.Textbox(SectionContainer, Window, Textbox)
-			-- 	return Textbox
-			-- end
-			-- function Section:Keybind(Keybind)
-			-- 	Keybind = Bracket.Utilities:GetType(Keybind, {}, "table", true)
-			-- 	Keybind.Name = Bracket.Utilities:GetType(Keybind.Name, "Keybind", "string")
-			-- 	Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, Keybind.Name, "string")
-
-			-- 	Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "NONE", "string")
-			-- 	Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, false, "boolean")
-			-- 	Keybind.Callback = Bracket.Utilities:GetType(Keybind.Callback, function() end, "function")
-			-- 	Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Unknown", "Backquote"}, "table")
-			-- 	Window.Elements[#Window.Elements + 1] = Keybind
-			-- 	Window.Flags[Keybind.Flag] = Keybind.Value
-
-			-- 	Bracket.Elements.Keybind(SectionContainer, Window, Keybind)
-			-- 	return Keybind
-			-- end
-			-- function Section:Dropdown(Dropdown)
-			-- 	Dropdown = Bracket.Utilities:GetType(Dropdown, {}, "table", true)
-			-- 	Dropdown.Name = Bracket.Utilities:GetType(Dropdown.Name, "Dropdown", "string")
-			-- 	Dropdown.Flag = Bracket.Utilities:GetType(Dropdown.Flag, Dropdown.Name, "string")
-			-- 	Dropdown.List = Bracket.Utilities:GetType(Dropdown.List, {}, "table")
-			-- 	Window.Elements[#Window.Elements + 1] = Dropdown
-			-- 	Window.Flags[Dropdown.Flag] = Dropdown.Value
-
-			-- 	Bracket.Elements.Dropdown(SectionContainer, Window, Dropdown)
-			-- 	return Dropdown
-			-- end
-			-- function Section:Colorpicker(Colorpicker)
-			-- 	Colorpicker = Bracket.Utilities:GetType(Colorpicker, {}, "table", true)
-			-- 	Colorpicker.Name = Bracket.Utilities:GetType(Colorpicker.Name, "Colorpicker", "string")
-			-- 	Colorpicker.Flag = Bracket.Utilities:GetType(Colorpicker.Flag, Colorpicker.Name, "string")
-
-			-- 	Colorpicker.Value = Bracket.Utilities:GetType(Colorpicker.Value, {1, 1, 1, 0, false}, "table")
-			-- 	Colorpicker.Callback = Bracket.Utilities:GetType(Colorpicker.Callback, function() end, "function")
-			-- 	Window.Elements[#Window.Elements + 1] = Colorpicker
-			-- 	Window.Flags[Colorpicker.Flag] = Colorpicker.Value
-
-			-- 	Bracket.Elements.Colorpicker(SectionContainer, Window, Colorpicker)
-			-- 	return Colorpicker
-			-- end
 			return Section
 		end
 		return Tab
@@ -4193,5 +4178,44 @@ function Bracket:Toast(Notification)
 		end)
 	end)
 end
+
+if Bracket.IsLocal then
+	function isfolder(path)
+		print("Folder check", path)
+		return true
+	end
+	function makefolder(path)
+		print("Creating folder", path)
+	end
+	function isfile(path)
+		print("File check", path)
+		return true
+	end
+	function listfiles(path)
+		print("Listing files", path)
+		return {
+			"Testing Config System",
+			"Yeah I know it's dumb",
+			"But what You gonna do about this?",
+			"Oh also you can't use special characters in file names LOL"
+		}
+	end
+	function writefile(path, data)
+		print("Writing file", path, data)
+	end
+	function readfile(path)
+		print("Reading file", path)
+		return "[]"
+	end
+	function delfile(path)
+		print("Deleting file", path)
+	end
+	function sethiddenproperty(object, prop, value)
+		print("Setting property", object, prop, value)
+	end
+end
+
+-- // Initialize ScreenGui
+Bracket.Screen = Bracket.Elements.Screen()
 
 return Bracket
