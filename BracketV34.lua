@@ -728,10 +728,10 @@ Bracket.Assets = {
 		TabContainer.Name = "TabContainer"
 		TabContainer.ZIndex = 4
 		TabContainer.AnchorPoint = Vector2.new(0.5, 0)
-		TabContainer.Size = UDim2.new(1, 0, 1, -42)
+		TabContainer.Size = UDim2.new(1, 0, 1, -49)
 		TabContainer.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		TabContainer.BackgroundTransparency = 1
-		TabContainer.Position = UDim2.new(0.5, 0, 0, 42)
+		TabContainer.Position = UDim2.new(0.5, 0, 0, 49)
 		TabContainer.BorderSizePixel = 0
 		TabContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 		TabContainer.Parent = Window
@@ -804,12 +804,12 @@ Bracket.Assets = {
 		ListLayout.Name = "ListLayout"
 		ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		ListLayout.Padding = UDim.new(0, 10)
+		ListLayout.Padding = UDim.new(0, 14)
 		ListLayout.Parent = LeftSide
 
 		local Padding = Instance.new("UIPadding")
 		Padding.Name = "Padding"
-		Padding.PaddingTop = UDim.new(0, 11)
+		Padding.PaddingTop = UDim.new(0, 8)
 		Padding.PaddingLeft = UDim.new(0, 6)
 		Padding.PaddingRight = UDim.new(0, 4)
 		Padding.Parent = LeftSide
@@ -829,12 +829,12 @@ Bracket.Assets = {
 		ListLayout.Name = "ListLayout"
 		ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		ListLayout.Padding = UDim.new(0, 10)
+		ListLayout.Padding = UDim.new(0, 14)
 		ListLayout.Parent = RightSide
 
 		Padding = Instance.new("UIPadding")
 		Padding.Name = "Padding"
-		Padding.PaddingTop = UDim.new(0, 11)
+		Padding.PaddingTop = UDim.new(0, 8)
 		Padding.PaddingLeft = UDim.new(0, 4)
 		Padding.PaddingRight = UDim.new(0, 6)
 		Padding.Parent = RightSide
@@ -2476,7 +2476,7 @@ Bracket.Elements = {
 			end
 		end)
 		Window:GetPropertyChangedSignal("Name"):Connect(function(Name)
-			WindowAsset.Title.Text = Name
+			WindowAsset.Topbar.Title.Text = Name
 		end)
 		Window:GetPropertyChangedSignal("Position"):Connect(function(Position)
 			WindowAsset.Position = Position
@@ -2568,6 +2568,7 @@ Bracket.Elements = {
 			return Watermark
 		end
 		function Window.KeybindList(Self, KeybindList)
+			local KeybindListAsset = Bracket.Screen.KeybindList
 			KeybindList = Bracket.Utilities:GetType(KeybindList, "table", {}, true)
 			KeybindList.Enabled = Bracket.Utilities:GetType(KeybindList.Enabled, "boolean", false)
 			KeybindList.Title = Bracket.Utilities:GetType(KeybindList.Title, "string", "Keybinds")
@@ -2575,41 +2576,43 @@ Bracket.Elements = {
 			KeybindList.Size = Bracket.Utilities:GetType(KeybindList.Size, "UDim2", UDim2.new(0, 121, 0, 246))
 
 			KeybindList.Type = "KeybindList"
-			KeybindList.Asset = Bracket.Screen.KeybindList
+			KeybindList.Asset = KeybindListAsset
 			KeybindList.List = KeybindList.Asset.BindContainer
 
-			Bracket.Screen.KeybindList.Visible = KeybindList.Enabled
-			Bracket.Screen.KeybindList.Topbar.Title.Text = KeybindList.Title
+			KeybindListAsset.Visible = KeybindList.Enabled
+			KeybindListAsset.Topbar.Title.Text = KeybindList.Title
+			KeybindListAsset.Position = KeybindList.Position
+			KeybindListAsset.Size = KeybindList.Size
 
-			Bracket.Utilities.MakeDraggable(Bracket.Screen.KeybindList.Topbar, Bracket.Screen.KeybindList, function(Position)
+			Bracket.Utilities.MakeDraggable(KeybindListAsset.Topbar, KeybindListAsset, function(Position)
 				KeybindList.Position = Position
 			end)
-			Bracket.Utilities.MakeResizeable(Bracket.Screen.KeybindList.Resize, Bracket.Screen.KeybindList, Vector2.new(121, 246), Vector2.new(896, 896), function(Size)
+			Bracket.Utilities.MakeResizeable(KeybindListAsset.Resize, KeybindListAsset, Vector2.new(121, 246), Vector2.new(896, 896), function(Size)
 				KeybindList.Size = Size
 			end)
 
 			KeybindList:GetPropertyChangedSignal("Title"):Connect(function(Title)
-				Bracket.Screen.KeybindList.Title.Text = Title
+				KeybindListAsset.Title.Text = Title
 			end)
 			KeybindList:GetPropertyChangedSignal("Enabled"):Connect(function(Enabled)
-				Bracket.Screen.KeybindList.Visible = Enabled
+				KeybindListAsset.Visible = Enabled
 			end)
 			KeybindList:GetPropertyChangedSignal("Position"):Connect(function(Position)
-				Bracket.Screen.KeybindList.Position = Position
+				KeybindListAsset.Position = Position
 			end)
 			KeybindList:GetPropertyChangedSignal("Size"):Connect(function(Size)
-				Bracket.Screen.KeybindList.Size = Size
+				KeybindListAsset.Size = Size
 			end)
 
 			WindowAsset.Background.Changed:Connect(function(Property)
 				if Property == "Image" then
-					Bracket.Screen.KeybindList.Background.Image = WindowAsset.Background.Image
+					KeybindListAsset.Background.Image = WindowAsset.Background.Image
 				elseif Property == "ImageColor3" then
-					Bracket.Screen.KeybindList.Background.ImageColor3 = WindowAsset.Background.ImageColor3
+					KeybindListAsset.Background.ImageColor3 = WindowAsset.Background.ImageColor3
 				elseif Property == "ImageTransparency" then
-					Bracket.Screen.KeybindList.Background.ImageTransparency = WindowAsset.Background.ImageTransparency
+					KeybindListAsset.Background.ImageTransparency = WindowAsset.Background.ImageTransparency
 				elseif Property == "TileSize" then
-					Bracket.Screen.KeybindList.Background.TileSize = WindowAsset.Background.TileSize
+					KeybindListAsset.Background.TileSize = WindowAsset.Background.TileSize
 				end
 			end)
 
@@ -2774,11 +2777,11 @@ Bracket.Elements = {
 
 		TabAsset.LeftSide.ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 			local Side = Bracket.Utilities.GetLongestSide(TabAsset)
-			TabAsset.CanvasSize = UDim2.fromOffset(0, Side.ListLayout.AbsoluteContentSize.Y + 21)
+			TabAsset.CanvasSize = UDim2.fromOffset(0, Side.ListLayout.AbsoluteContentSize.Y + 16)
 		end)
 		TabAsset.RightSide.ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 			local Side = Bracket.Utilities.GetLongestSide(TabAsset)
-			TabAsset.CanvasSize = UDim2.fromOffset(0, Side.ListLayout.AbsoluteContentSize.Y + 21)
+			TabAsset.CanvasSize = UDim2.fromOffset(0, Side.ListLayout.AbsoluteContentSize.Y + 16)
 		end)
 		TabButtonAsset.MouseButton1Click:Connect(function()
 			ChooseTab(TabButtonAsset, TabAsset)
@@ -2918,7 +2921,6 @@ Bracket.Elements = {
 		ButtonAsset.Parent = Parent
 		ButtonAsset.Title.Text = Button.Name
 		ButtonAsset.Button.Title.Text = Button.ButtonName
-		print(ButtonAsset.Button.Title.TextBounds.X)
 		ButtonAsset.Button.Size = UDim2.new(0, ButtonAsset.Button.Title.TextBounds.X + 8, 0, 18)
 		ButtonAsset.Title.Size = UDim2.new(1, -(ButtonAsset.Button.Size.X.Offset + 4), 1, 0)
 
@@ -4380,24 +4382,24 @@ function Bracket:Push(Notification)
 
 	local NotificationAsset = Bracket.Assets.PushNotification()
 	NotificationAsset.Parent = Bracket.Screen.PNContainer
-	NotificationAsset.Title.Text = Notification.Title
+	NotificationAsset.TitleHolder.Title.Text = Notification.Title
 	NotificationAsset.Description.Text = Notification.Description
-	NotificationAsset.Title.Size = UDim2.new(1, 0, 0, NotificationAsset.Title.TextBounds.Y)
+	NotificationAsset.TitleHolder.Title.Size = UDim2.new(1, 0, 0, NotificationAsset.TitleHolder.Title.TextBounds.Y)
 	NotificationAsset.Description.Size = UDim2.new(1, 0, 0, NotificationAsset.Description.TextBounds.Y)
 
 	NotificationAsset.Size = UDim2.fromOffset(
-		(NotificationAsset.Title.TextBounds.X > NotificationAsset.Description.TextBounds.X
-			and NotificationAsset.Title.TextBounds.X or NotificationAsset.Description.TextBounds.X) + 24,
+		(NotificationAsset.TitleHolder.Title.TextBounds.X > NotificationAsset.Description.TextBounds.X
+			and NotificationAsset.TitleHolder.Title.TextBounds.X or NotificationAsset.Description.TextBounds.X) + 24,
 		NotificationAsset.ListLayout.AbsoluteContentSize.Y + 8
 	)
 
 	if Notification.Duration then
 		task.spawn(function()
 			for Time = Notification.Duration, 1, -1 do
-				NotificationAsset.Title.Close.Text = Time
+				NotificationAsset.TitleHolder.Close.Text = Time
 				task.wait(1)
 			end
-			NotificationAsset.Title.Close.Text = 0
+			NotificationAsset.TitleHolder.Close.Text = 0
 
 			NotificationAsset:Destroy()
 			if Notification.Callback then
@@ -4405,7 +4407,7 @@ function Bracket:Push(Notification)
 			end
 		end)
 	else
-		NotificationAsset.Title.Close.MouseButton1Click:Connect(function()
+		NotificationAsset.TitleHolder.Close.MouseButton1Click:Connect(function()
 			NotificationAsset:Destroy()
 		end)
 	end
@@ -4420,7 +4422,7 @@ function Bracket:Toast(Notification)
 	local NotificationAsset = Bracket.Assets.ToastNotification()
 	NotificationAsset.Parent = Bracket.Screen.TNContainer
 	NotificationAsset.Main.Title.Text = Notification.Title
-	NotificationAsset.Main.GradientLine.BackgroundColor3 = Notification.Color
+	NotificationAsset.Main.GLine.BackgroundColor3 = Notification.Color
 
 	NotificationAsset.Main.Size = UDim2.fromOffset(
 		NotificationAsset.Main.Title.TextBounds.X + 10,
