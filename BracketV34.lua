@@ -354,6 +354,7 @@ Bracket.Assets = {
 		Watermark.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
 		Watermark.TextStrokeTransparency = 0.75
 		Watermark.TextSize = 14
+		Watermark.RichText = true
 		Watermark.TextColor3 = Color3.fromRGB(255, 255, 255)
 		-- Watermark.TextYAlignment = Enum.TextYAlignment.Top
 		Watermark.Text = "Watermark"
@@ -2592,7 +2593,7 @@ Bracket.Elements = {
 			end)
 
 			KeybindList:GetPropertyChangedSignal("Title"):Connect(function(Title)
-				KeybindListAsset.Title.Text = Title
+				KeybindListAsset.Topbar.Title.Text = Title
 			end)
 			KeybindList:GetPropertyChangedSignal("Enabled"):Connect(function(Enabled)
 				KeybindListAsset.Visible = Enabled
