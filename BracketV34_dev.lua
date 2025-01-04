@@ -9,20 +9,15 @@ local CoreGui = game:GetService("CoreGui")
 local GuiInset = GuiService:GetGuiInset()
 local LocalPlayer = PlayerService.LocalPlayer
 
--- TODO: Change Window.Elements with Bracket.Elements and Window.Flags to Bracket.Flags (DONE)
 -- TODO: Use Self when available (?)
 -- TODO: Benchmark rawget and table[key] in proxify
--- TODO: Move Flags NoOverwriteProxy to Utilities and use it from there (DONE)
--- TODO: Make Bracket.Utilities.FormatForSave() and use it in Window.SaveConfig() (?)
--- TODO: Finish Bracket.Cursor() (DONE)
--- TODO: Make Self.Utilities.IsWindowsVisible() for Bracket.Watermark()
--- TODO: Get Window Instance for Bracket.KeybindList() somehow
 -- TODO: Rewrite dropdown options
 
 local Bracket = {
 	Screen = nil,
 	IsLocal = not identifyexecutor,
 	Elements = {},
+	Windows = {},
 	Flags = {},
 
 	SectionInclude = {
@@ -305,6 +300,21 @@ Bracket.Utilities = {
 			return TabInstance.RightSide
 		else
 			return Self.GetShortestSide(TabInstance)
+		end
+	end,
+	IsWindowsVisible = function(Self)
+		for Index, Element in pairs(Self.Windows) do
+			if Element.Enabled then
+				return true
+			end
+		end
+	end,
+	FindLastElementWithType = function(Self, Type)
+		for Index = #Self.Elements, 1, -1 do
+			local Element = Self.Elements[Index]
+			if Element.Type == Type then
+				return Element
+			end
 		end
 	end,
 	FindElementByFlag = function(Self, Flag)
@@ -2391,11 +2401,11 @@ Bracket.Templates = {
 		Tooltip.OffsetY = Bracket.Utilities:GetType(Tooltip.OffsetY, "number", 5)
 
 		local TooltipInstance = Bracket.Instances.Tooltip()
-		
+
 		Tooltip.Type = "Tooltip"
 		Tooltip.Instance = TooltipInstance
 		--Tooltip.ParentElement = ParentElement -- tables cannot be cyclic
-		
+
 		TooltipInstance.Parent = Bracket.Screen
 		TooltipInstance.Text = Tooltip.Text
 		TooltipInstance.Size = UDim2.fromOffset(
@@ -2434,6 +2444,7 @@ Bracket.Templates = {
 		return Tooltip
 	end,
 	Snowflakes = function(WindowInstance)
+		if Bracket.IsLocal then return end
 		local ParticleEmitter = loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexR32/rParticle/master/Main.lua"))()
 		local Emitter = ParticleEmitter.new(WindowInstance.Background, WindowInstance.Snowflake)
 		local NewRandom = Random.new() Emitter.SpawnRate = 20
@@ -2466,7 +2477,7 @@ Bracket.Templates = {
 		Window.RainbowSpeed = Bracket.Utilities:GetType(Window.RainbowSpeed, "number", 10)
 
 		local WindowInstance = Bracket.Instances.Window()
-		
+
 		Window.Type = "Window"
 		Window.Instance = WindowInstance
 		Window.Background = WindowInstance.Background
@@ -2474,8 +2485,9 @@ Bracket.Templates = {
 		Window.RainbowHue = 0
 		Window.Colorable = {}
 
+		Bracket.Windows[#Bracket.Windows + 1] = Window
 		Bracket.Elements[#Bracket.Elements + 1] = Window
-		
+
 		WindowInstance.Parent = Bracket.Screen
 		WindowInstance.Visible = Window.Enabled
 		WindowInstance.Topbar.Title.Text = Window.Name
@@ -2636,7 +2648,7 @@ Bracket.Templates = {
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
 						Bracket:SaveConfig(FolderName, ConfigDropdown.Value[1])
 					else
-						Bracket:Push({
+						Bracket:PushNotification({
 							Title = "Config System",
 							Description = "Select Config First",
 							Duration = 10
@@ -2647,7 +2659,7 @@ Bracket.Templates = {
 					if ConfigDropdown.Value and ConfigDropdown.Value[1] then
 						Bracket:LoadConfig(FolderName, ConfigDropdown.Value[1])
 					else
-						Bracket:Push({
+						Bracket:PushNotification({
 							Title = "Config System",
 							Description = "Select Config First",
 							Duration = 10
@@ -2659,7 +2671,7 @@ Bracket.Templates = {
 						Bracket:DeleteConfig(FolderName, ConfigDropdown.Value[1])
 						UpdateConfigList()
 					else
-						Bracket:Push({
+						Bracket:PushNotification({
 							Title = "Config System",
 							Description = "Select Config First",
 							Duration = 10
@@ -2676,7 +2688,7 @@ Bracket.Templates = {
 						Bracket:AddToAutoload(FolderName, ConfigDropdown.Value[1])
 						ConfigDivider.Text = `Autoload Config\n<font color="rgb(191, 191, 191)">[ {ConfigDropdown.Value[1]} ]</font>`
 					else
-						Bracket:Push({
+						Bracket:PushNotification({
 							Title = "Config System",
 							Description = "Select Config First",
 							Duration = 10
@@ -2697,15 +2709,15 @@ Bracket.Templates = {
 		Section.Name = Bracket.Utilities:GetType(Section.Name, "string", "Section")
 
 		local SectionInstance = Bracket.Instances.Section()
-		
+
 		Section.Type = "Section"
 		Section.Instance = SectionInstance
 		Section.Container = SectionInstance.Container
 		Section.ParentElement = ParentElement
 		Section.Window = Window
-		
+
 		Bracket.Elements[#Bracket.Elements + 1] = Section
-		
+
 		local Parent = Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Section.Side)
 
 		SectionInstance.Parent = Parent
@@ -2735,14 +2747,14 @@ Bracket.Templates = {
 		Divider.Text = Bracket.Utilities:GetType(Divider.Text, "string", "")
 
 		local DividerInstance = Bracket.Instances.Divider()
-		
+
 		Divider.Type = "Divider"
 		Divider.Instance = DividerInstance
 		Divider.ParentElement = ParentElement
 		Divider.Window = Window
-		
+
 		Bracket.Elements[#Bracket.Elements + 1] = Divider
-		
+
 		local Parent = ParentElement.Type == "Tab" and Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Divider.Side) or ParentElement.Container
 
 		DividerInstance.Parent = Parent
@@ -2811,18 +2823,18 @@ Bracket.Templates = {
 		if Button.AltStyle then return Bracket.Templates.Button2(Button, ParentElement, Window) end
 
 		local ButtonInstance = Bracket.Instances.Button()
-		
+
 		Button.Type = "Button"
 		Button.Instance = ButtonInstance
 		Button.ParentElement = ParentElement
 		Button.Window = Window
-		
+
 		Button.Connection = ButtonInstance.MouseButton1Click:Connect(Button.Callback)
-		
+
 		Button.ColorConfig = {ButtonInstance, "BorderColor3", false}
 		Window.Colorable[#Window.Colorable + 1] = Button.ColorConfig
 		Bracket.Elements[#Bracket.Elements + 1] = Button
-		
+
 		local Parent = ParentElement.Type == "Tab" and Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Button.Side) or ParentElement.Container
 
 		ButtonInstance.Parent = Parent
@@ -2863,18 +2875,18 @@ Bracket.Templates = {
 		Button.ButtonName = Bracket.Utilities:GetType(Button.ButtonName, "string", "Click Me!")
 
 		local ButtonInstance = Bracket.Instances.Button2()
-		
+
 		Button.Type = "Button"
 		Button.Instance = ButtonInstance
 		Button.ParentElement = ParentElement
 		Button.Window = Window
-		
+
 		Button.Connection = ButtonInstance.Button.MouseButton1Click:Connect(Button.Callback)
-		
+
 		Button.ColorConfig = {ButtonInstance.Button, "BorderColor3", false}
 		Window.Colorable[#Window.Colorable + 1] = Button.ColorConfig
 		Bracket.Elements[#Bracket.Elements + 1] = Button
-		
+
 		local Parent = ParentElement.Type == "Tab" and Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Button.Side) or ParentElement.Container
 
 		ButtonInstance.Parent = Parent
@@ -2926,19 +2938,19 @@ Bracket.Templates = {
 		-- Toggle.Callback = Bracket.Utilities:GetType(Toggle.Callback, "function", function() end)
 
 		local ToggleInstance = Bracket.Instances.Toggle()
-		
+
 		Toggle.Type = "Toggle"
 		Toggle.Instance = ToggleInstance
 		Toggle.Layout = ToggleInstance.Layout
 		Toggle.ParentElement = ParentElement
 		Toggle.Window = Window
-		
+
 		Toggle.Default = Bracket.Utilities:DeepCopy(Toggle.Value)
 		Toggle.ColorConfig = {ToggleInstance.Tick, "BackgroundColor3", Toggle.Value}
 		Window.Colorable[#Window.Colorable + 1] = Toggle.ColorConfig
 		Bracket.Elements[#Bracket.Elements + 1] = Toggle
 		Bracket.Flags[Toggle.Flag] = Toggle.Value
-		
+
 		local Parent = ParentElement.Type == "Tab" and Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Toggle.Side) or ParentElement.Container
 
 		ToggleInstance.Parent = Parent
@@ -2994,21 +3006,21 @@ Bracket.Templates = {
 		-- Slider.Callback = Bracket.Utilities:GetType(Slider.Callback, "function", function() end)
 
 		local SliderInstance = Slider.Slim and Bracket.Instances.SlimSlider() or Bracket.Instances.Slider()
-		
+
 		Slider.Type = "Slider"
 		Slider.Instance = SliderInstance
 		Slider.ParentElement = ParentElement
 		Slider.Window = Window
-		
+
 		Slider.Active = false
 		Slider.Value = tonumber(string.format(`%.{Slider.Precise}f`, Slider.Value))
-		
+
 		Slider.Default = Bracket.Utilities:DeepCopy(Slider.Value)
 		Slider.ColorConfig = {SliderInstance.Background.Bar, "BackgroundColor3", true}
 		Window.Colorable[#Window.Colorable + 1] = Slider.ColorConfig
 		Bracket.Elements[#Bracket.Elements + 1] = Slider
 		Bracket.Flags[Slider.Flag] = Slider.Value
-		
+
 		local Parent = ParentElement.Type == "Tab" and Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Slider.Side) or ParentElement.Container
 
 		SliderInstance.Parent = Parent
@@ -3117,23 +3129,24 @@ Bracket.Templates = {
 		-- Textbox.Callback = Bracket.Utilities:GetType(Textbox.Callback, "function", function() end)
 
 		local TextboxInstance = Bracket.Instances.Textbox()
-		
+
 		Textbox.Type = "Textbox"
 		Textbox.Instance = TextboxInstance
 		Textbox.ParentElement = ParentElement
 		Textbox.Window = Window
-		
+
 		Textbox.EnterPressed = false
-		
+
 		Textbox.Default = Bracket.Utilities:DeepCopy(Textbox.Value)
 		Bracket.Elements[#Bracket.Elements + 1] = Textbox
 		Bracket.Flags[Textbox.Flag] = Textbox.Value
-		
+
+		if Textbox.NumbersOnly then Textbox.Value = tonumber(Textbox.Value) or 0 end
 		local Parent = ParentElement.Type == "Tab" and Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Textbox.Side) or ParentElement.Container
 
 		TextboxInstance.Parent = Parent
 		TextboxInstance.Title.Text = Textbox.Name
-		TextboxInstance.Background.Input.Text = Textbox.Value
+		TextboxInstance.Background.Input.Text = Textbox.PasswordMode and string.rep(utf8.char(8226), string.len(Textbox.Value)) or Textbox.Value
 		TextboxInstance.Background.Input.PlaceholderText = Textbox.Placeholder
 		TextboxInstance.Title.Visible = not Textbox.HideName
 
@@ -3154,6 +3167,8 @@ Bracket.Templates = {
 		end)
 
 		TextboxInstance.Background.Input.Focused:Connect(function()
+			TextboxInstance.Background.Input.Text = Textbox.Value
+
 			local TextBounds = Bracket.Utilities.GetTextBounds(
 				TextboxInstance.Background.Input.Text,
 				TextboxInstance.Background.Input.Font.Name,
@@ -3162,14 +3177,13 @@ Bracket.Templates = {
 
 			TextboxInstance.Background.Size = UDim2.new(1, 0, 0, TextBounds.Y + 4)
 			TextboxInstance.Size = UDim2.new(1, 0, 0, TextboxInstance.Title.Size.Y.Offset + TextboxInstance.Background.Size.Y.Offset)
-
-			TextboxInstance.Background.Input.Text = Textbox.Value
 		end)
 		TextboxInstance.Background.Input.FocusLost:Connect(function(EnterPressed)
 			local Input = TextboxInstance.Background.Input
 
 			Textbox.EnterPressed = EnterPressed
-			Textbox.Value = Input.Text Textbox.EnterPressed = false
+			Textbox.Value = Input.Text
+			Textbox.EnterPressed = false
 		end)
 
 		Textbox:GetPropertyChangedSignal("Name"):Connect(function(Name)
@@ -3180,12 +3194,15 @@ Bracket.Templates = {
 		end)
 		Textbox:GetPropertyChangedSignal("Value"):Connect(function(Value)
 			local Input = TextboxInstance.Background.Input
-			Input.Text = Textbox.AutoClear and "" or Value
-			if Textbox.PasswordMode then Input.Text = string.rep(utf8.char(8226), #Input.Text) end
+			if Textbox.AutoClear then Input.Text = "" end
+			if Textbox.NumbersOnly then Value = tonumber(Value) or 0 end
+			--if Textbox.PasswordMode then Input.Text = string.rep(utf8.char(8226), string.len(Value)) end
 
 			TextboxInstance.Background.Size = UDim2.new(1, 0, 0, Input.TextSize + 4)
 			TextboxInstance.Size = UDim2.new(1, 0, 0, TextboxInstance.Title.Size.Y.Offset + TextboxInstance.Background.Size.Y.Offset)
 
+			Input.Text = Textbox.PasswordMode and string.rep(utf8.char(8226), string.len(Value)) or Value
+			Textbox.Internal.Value = Value
 			Bracket.Flags[Textbox.Flag] = Value
 			if Textbox.Callback then Textbox.Callback(Value, Textbox.EnterPressed) end
 		end)
@@ -3200,7 +3217,7 @@ Bracket.Templates = {
 		Keybind = Bracket.Utilities:GetType(Keybind, "table", {}, true)
 		Keybind.Name = Bracket.Utilities:GetType(Keybind.Name, "string", "Keybind")
 		Keybind.Flag = Bracket.Utilities:GetType(Keybind.Flag, "string", Keybind.Name)
-		
+
 		Keybind.Mouse = Bracket.Utilities:GetType(Keybind.Mouse, "boolean", false)
 		Keybind.Blacklist = Bracket.Utilities:GetType(Keybind.Blacklist, "table", {"W", "A", "S", "D", "Slash", "Tab", "Backspace", "Escape", "Space", "Delete", "Backquote", "Unknown"})
 		Keybind.Value = Bracket.Utilities:GetType(Keybind.Value, "string", "NONE")
@@ -3241,23 +3258,7 @@ Bracket.Templates = {
 		end)
 
 		if type(Bracket.KeybindList) == "table" and not Keybind.IgnoreList then
-			Keybind.ListMimic = {}
-			Keybind.ListMimic.Instance = Bracket.Instances.KeybindMimic()
-			Keybind.ListMimic.Instance.Title.Text = Keybind.CustomName or Keybind.Name
-			Keybind.ListMimic.Instance.Visible = Keybind.Value ~= "NONE"
-			Keybind.ListMimic.Instance.Layout.Keybind.Text = `[ {Keybind.Value} ]`
-			Keybind.ListMimic.Instance.Parent = Bracket.KeybindList.List
-
-			Keybind.ListMimic.Instance.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-				Keybind.ListMimic.Instance.Title.Size = UDim2.new(1, -(Keybind.ListMimic.Instance.Layout.ListLayout.AbsoluteContentSize.X + 18), 1, 0)
-			end)
-
-			Keybind.ListMimic.Instance.Layout.Keybind:GetPropertyChangedSignal("TextBounds"):Connect(function()
-				Keybind.ListMimic.Instance.Layout.Keybind.Size = UDim2.new(0, Keybind.ListMimic.Instance.Layout.Keybind.TextBounds.X, 1, 0)
-			end)
-
-			Keybind.ListMimic.ColorConfig = {Keybind.ListMimic.Instance.Tick, "BackgroundColor3", false}
-			Window.Colorable[#Window.Colorable + 1] = Keybind.ListMimic.ColorConfig
+			Bracket.Templates.KeybindMimic(Keybind, Bracket.KeybindList)
 		end
 
 		UserInputService.InputBegan:Connect(function(Input, GameProcessedEvent)
@@ -3273,9 +3274,9 @@ Bracket.Templates = {
 
 				if Key == Keybind.Value and not Keybind.Binding then
 					Keybind.Toggle = not Keybind.Toggle
-					if Keybind.ListMimic then
-						Keybind.ListMimic.ColorConfig[3] = true
-						Keybind.ListMimic.Instance.Tick.BackgroundColor3 = Window.Color
+					if Keybind.Mimic then
+						Keybind.Mimic.ColorConfig[3] = true
+						Keybind.Mimic.Instance.Tick.BackgroundColor3 = Window.Color
 					end
 
 					if Keybind.Callback then Keybind.Callback(Keybind.Value, true, Keybind.Toggle) end
@@ -3293,9 +3294,9 @@ Bracket.Templates = {
 
 					if Key == Keybind.Value and not Keybind.Binding then
 						Keybind.Toggle = not Keybind.Toggle
-						if Keybind.ListMimic then
-							Keybind.ListMimic.ColorConfig[3] = true
-							Keybind.ListMimic.Instance.Tick.BackgroundColor3 = Window.Color
+						if Keybind.Mimic then
+							Keybind.Mimic.ColorConfig[3] = true
+							Keybind.Mimic.Instance.Tick.BackgroundColor3 = Window.Color
 						end
 
 						if Keybind.Callback then Keybind.Callback(Keybind.Value, true, Keybind.Toggle) end
@@ -3315,9 +3316,9 @@ Bracket.Templates = {
 				end
 
 				if Key == Keybind.Value then
-					if Keybind.ListMimic then
-						Keybind.ListMimic.ColorConfig[3] = false
-						Keybind.ListMimic.Instance.Tick.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
+					if Keybind.Mimic then
+						Keybind.Mimic.ColorConfig[3] = false
+						Keybind.Mimic.Instance.Tick.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
 					end
 
 					if Keybind.Callback then Keybind.Callback(Keybind.Value, false, Keybind.Toggle) end
@@ -3334,9 +3335,9 @@ Bracket.Templates = {
 					end
 
 					if Key == Keybind.Value then
-						if Keybind.ListMimic then
-							Keybind.ListMimic.ColorConfig[3] = false
-							Keybind.ListMimic.Instance.Tick.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
+						if Keybind.Mimic then
+							Keybind.Mimic.ColorConfig[3] = false
+							Keybind.Mimic.Instance.Tick.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
 						end
 
 						if Keybind.Callback then Keybind.Callback(Keybind.Value, false, Keybind.Toggle) end
@@ -3349,8 +3350,8 @@ Bracket.Templates = {
 			KeybindInstance.Title.Text = Name
 		end)
 		Keybind:GetPropertyChangedSignal("CustomName"):Connect(function(Value)
-			if Keybind.ListMimic then
-				Keybind.ListMimic.Instance.Title.Text = Value or Keybind.Name
+			if Keybind.Mimic then
+				Keybind.Mimic.Instance.Title.Text = Value or Keybind.Name
 			end
 		end)
 		Keybind:GetPropertyChangedSignal("Value"):Connect(function(Value, OldValue)
@@ -3359,9 +3360,9 @@ Bracket.Templates = {
 			end
 
 			KeybindInstance.Value.Text = `[ {tostring(Value)} ]`
-			if Keybind.ListMimic then
-				Keybind.ListMimic.Instance.Visible = Value ~= "NONE"
-				Keybind.ListMimic.Instance.Layout.Keybind.Text = `[ {tostring(Value)} ]`
+			if Keybind.Mimic then
+				Keybind.Mimic.Instance.Visible = Value ~= "NONE"
+				Keybind.Mimic.Instance.Layout.Keybind.Text = `[ {tostring(Value)} ]`
 			end
 
 			Keybind.WaitingForBind = false
@@ -3424,23 +3425,7 @@ Bracket.Templates = {
 		end)
 
 		if type(Bracket.KeybindList) == "table" and not Keybind.IgnoreList then
-			Keybind.ListMimic = {}
-			Keybind.ListMimic.Instance = Bracket.Instances.KeybindMimic()
-			Keybind.ListMimic.Instance.Title.Text = Keybind.CustomName or ParentElement.Name
-			Keybind.ListMimic.Instance.Visible = Keybind.Value ~= "NONE"
-			Keybind.ListMimic.Instance.Layout.Keybind.Text = `[ {Keybind.Value} ]`
-			Keybind.ListMimic.Instance.Parent = Bracket.KeybindList.List
-
-			Keybind.ListMimic.Instance.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-				Keybind.ListMimic.Instance.Title.Size = UDim2.new(1, -(Keybind.ListMimic.Instance.Layout.ListLayout.AbsoluteContentSize.X + 18), 1, 0)
-			end)
-
-			Keybind.ListMimic.Instance.Layout.Keybind:GetPropertyChangedSignal("TextBounds"):Connect(function()
-				Keybind.ListMimic.Instance.Layout.Keybind.Size = UDim2.new(0, Keybind.ListMimic.Instance.Layout.Keybind.TextBounds.X, 1, 0)
-			end)
-
-			Keybind.ListMimic.ColorConfig = {Keybind.ListMimic.Instance.Tick, "BackgroundColor3", false}
-			Window.Colorable[#Window.Colorable + 1] = Keybind.ListMimic.ColorConfig
+			Bracket.Templates.KeybindMimic(Keybind, Bracket.KeybindList)
 		end
 
 		UserInputService.InputBegan:Connect(function(Input, GameProcessedEvent)
@@ -3479,7 +3464,7 @@ Bracket.Templates = {
 
 				if Key == Keybind.Value and not Keybind.Binding then
 					if not Keybind.DisableToggle then
-						if Keybind.HoldMode and ParentElement.Value == false then
+						if Keybind.HoldMode then
 							ParentElement.Value = true
 						else
 							ParentElement.Value = not ParentElement.Value
@@ -3504,7 +3489,7 @@ Bracket.Templates = {
 
 					if Key == Keybind.Value then
 						if not Keybind.DisableToggle then
-							if Keybind.HoldMode and ParentElement.Value == true then
+							if Keybind.HoldMode then
 								ParentElement.Value = false
 							end
 						end
@@ -3535,15 +3520,15 @@ Bracket.Templates = {
 		end)
 
 		ParentElement:GetPropertyChangedSignal("Value"):Connect(function(Value)
-			if Keybind.ListMimic then
-				Keybind.ListMimic.ColorConfig[3] = Value
-				Keybind.ListMimic.Instance.Tick.BackgroundColor3 = Value
+			if Keybind.Mimic then
+				Keybind.Mimic.ColorConfig[3] = Value
+				Keybind.Mimic.Instance.Tick.BackgroundColor3 = Value
 					and Window.Color or Color3.fromRGB(63, 63, 63)
 			end
 		end)
 		Keybind:GetPropertyChangedSignal("CustomName"):Connect(function(Value)
-			if Keybind.ListMimic then
-				Keybind.ListMimic.Instance.Title.Text = Value or ParentElement.Name
+			if Keybind.Mimic then
+				Keybind.Mimic.Instance.Title.Text = Value or ParentElement.Name
 			end
 		end)
 
@@ -3558,9 +3543,9 @@ Bracket.Templates = {
 			end
 
 			KeybindInstance.Text = `[ {tostring(Value)} ]`
-			if Keybind.ListMimic then
-				Keybind.ListMimic.Instance.Visible = Value ~= "NONE"
-				Keybind.ListMimic.Instance.Layout.Keybind.Text = `[ {tostring(Value)} ]`
+			if Keybind.Mimic then
+				Keybind.Mimic.Instance.Visible = Value ~= "NONE"
+				Keybind.Mimic.Instance.Layout.Keybind.Text = `[ {tostring(Value)} ]`
 			end
 
 			Keybind.WaitingForBind = false
@@ -3573,6 +3558,27 @@ Bracket.Templates = {
 
 		return Keybind
 	end,
+	KeybindMimic = function(Keybind, KeybindList)
+		if Keybind.Mimic then return end
+
+		Keybind.Mimic = {}
+		Keybind.Mimic.Instance = Bracket.Instances.KeybindMimic()
+		Keybind.Mimic.Instance.Title.Text = Keybind.CustomName or Keybind.Name or Keybind.ParentElement.Name
+		Keybind.Mimic.Instance.Visible = Keybind.Value ~= "NONE"
+		Keybind.Mimic.Instance.Layout.Keybind.Text = `[ {Keybind.Value} ]`
+		Keybind.Mimic.Instance.Parent = KeybindList.List
+
+		Keybind.Mimic.Instance.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+			Keybind.Mimic.Instance.Title.Size = UDim2.new(1, -(Keybind.Mimic.Instance.Layout.ListLayout.AbsoluteContentSize.X + 18), 1, 0)
+		end)
+
+		Keybind.Mimic.Instance.Layout.Keybind:GetPropertyChangedSignal("TextBounds"):Connect(function()
+			Keybind.Mimic.Instance.Layout.Keybind.Size = UDim2.new(0, Keybind.Mimic.Instance.Layout.Keybind.TextBounds.X, 1, 0)
+		end)
+
+		Keybind.Mimic.ColorConfig = {Keybind.Mimic.Instance.Tick, "BackgroundColor3", false}
+		Keybind.Window.Colorable[#Keybind.Window.Colorable + 1] = Keybind.Mimic.ColorConfig
+	end,
 	Dropdown = function(Dropdown, ParentElement, Window)
 		Dropdown = Bracket.Utilities:GetType(Dropdown, "table", {}, true)
 		Dropdown.Name = Bracket.Utilities:GetType(Dropdown.Name, "string", "Dropdown")
@@ -3581,24 +3587,24 @@ Bracket.Templates = {
 
 		local DropdownInstance = Bracket.Instances.Dropdown()
 		local OptionContainerInstance = Bracket.Instances.OptionContainer()
-		
+
 		Dropdown.Type = "Dropdown"
 		Dropdown.Instance = DropdownInstance
 		Dropdown.OptionContainerInstance = OptionContainerInstance
 		Dropdown.ParentElement = ParentElement
 		Dropdown.Window = Window
-		
+
 		Dropdown.Internal.Value = {}
-		
+
 		Bracket.Elements[#Bracket.Elements + 1] = Dropdown
 		Bracket.Flags[Dropdown.Flag] = Dropdown.Value
-		
+
 		local Parent = ParentElement.Type == "Tab" and Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Dropdown.Side) or ParentElement.Container
 		local ContainerRender = nil
 
 		DropdownInstance.Parent = Parent
 		OptionContainerInstance.Parent = Bracket.Screen
-		
+
 		DropdownInstance.Title.Text = Dropdown.Name
 		DropdownInstance.Title.Visible = not Dropdown.HideName
 
@@ -3836,19 +3842,19 @@ Bracket.Templates = {
 
 		local ColorpickerInstance = Bracket.Instances.Colorpicker()
 		local PaletteInstance = Bracket.Instances.ColorpickerPalette()
-		
+
 		Colorpicker.Type = "Colorpicker"
 		Colorpicker.Instance = ColorpickerInstance
 		Colorpicker.PaletteInstance = PaletteInstance
 		Colorpicker.ParentElement = ParentElement
 		Colorpicker.Window = Window
-		
+
 		Colorpicker.Default = Bracket.Utilities:DeepCopy(Colorpicker.Value)
 		Colorpicker.ColorConfig = {PaletteInstance.Rainbow.Tick, "BackgroundColor3", Colorpicker.Value[5]}
 		Window.Colorable[#Window.Colorable + 1] = Colorpicker.ColorConfig
 		Bracket.Elements[#Bracket.Elements + 1] = Colorpicker
 		Bracket.Flags[Colorpicker.Flag] = Colorpicker.Value
-		
+
 		local Parent = ParentElement.Type == "Tab" and Bracket.Utilities:ChooseTabSide(ParentElement.Instance, Colorpicker.Side) or ParentElement.Container
 		local PaletteRender, SVRender, HueRender, AlphaRender = nil, nil, nil, nil
 
@@ -4044,7 +4050,7 @@ Bracket.Templates = {
 
 		local PaletteRender, SVRender, HueRender, AlphaRender = nil, nil, nil, nil
 
-		ColorpickerInstance.Parent = Parent
+		ColorpickerInstance.Parent = ParentElement.Layout
 		PaletteInstance.Parent = Bracket.Screen
 		PaletteInstance.Rainbow.Tick.BackgroundColor3 = Colorpicker.Value[5] and Window.Color or Color3.fromRGB(63, 63, 63)
 
@@ -4256,14 +4262,15 @@ function Bracket.Cursor(Self, Cursor)
 
 	local CursorInstance = Bracket.Instances.Cursor()
 
-	Cursor.Type = "Watermark"
+	Cursor.Type = "Cursor"
 	Cursor.Instance = CursorInstance
 
 	CursorInstance.Parent = Self.Screen
 	CursorInstance.Visible = Cursor.Enabled
 
 	UserInputService.InputChanged:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseMovement and CursorInstance.Visible then
+		if not CursorInstance.Visible then return end
+		if Input.UserInputType == Enum.UserInputType.MouseMovement then
 			local Mouse = Vector2.new(Input.Position.X, Input.Position.Y) + GuiInset -- UserInputService:GetMouseLocation()
 			CursorInstance.Position = UDim2.fromOffset(Mouse.X - CursorInstance.Size.X.Offset / 2, Mouse.Y - CursorInstance.Size.Y.Offset / 2)
 		end
@@ -4288,6 +4295,14 @@ function Bracket.Watermark(Self, Watermark)
 
 	Watermark.Type = "Watermark"
 	Watermark.Instance = WatermarkInstance
+	--[[Watermark.Window = Self.Utilities.FindLastElementWithType(Self, "Window")
+
+	[if not Watermark.Window then
+		while not Watermark.Window do
+			Watermark.Window = Self.Utilities.FindLastElementWithType(Self, "Window")
+			task.wait(1)
+		end
+	end]]
 
 	WatermarkInstance.Parent = Self.Screen
 	WatermarkInstance.Visible = Watermark.Enabled
@@ -4299,10 +4314,12 @@ function Bracket.Watermark(Self, Watermark)
 	)
 
 	Self.Utilities.MakeDraggable(WatermarkInstance, WatermarkInstance, function(Position)
-		-- if not Window.Enabled then return end
+		if not Self.Utilities.IsWindowsVisible(Self) then return end
+		--if not Watermark.Window.Enabled then return end
 		WatermarkInstance.Position = Position
 	end, function(Position)
-		-- if not Window.Enabled then return end
+		if not Self.Utilities.IsWindowsVisible(Self) then return end
+		--if not Watermark.Window.Enabled then return end
 		Watermark.Value = {
 			Position.X.Scale, Position.X.Offset,
 			Position.Y.Scale, Position.Y.Offset
@@ -4344,6 +4361,7 @@ function Bracket.KeybindList(Self, KeybindList)
 	KeybindList.Type = "KeybindList"
 	KeybindList.Instance = KeybindInstance
 	KeybindList.List = KeybindInstance.BindContainer
+	KeybindList.Window = Self.Utilities.FindLastElementWithType(Self, "Window")
 
 	KeybindInstance.Parent = Self.Screen
 	KeybindInstance.Visible = KeybindList.Enabled
@@ -4352,9 +4370,11 @@ function Bracket.KeybindList(Self, KeybindList)
 	KeybindInstance.Size = KeybindList.Size
 
 	Self.Utilities.MakeDraggable(KeybindInstance.Topbar, KeybindInstance, function(Position)
+		if not Self.Utilities.IsWindowsVisible(Self) then return end
 		KeybindList.Position = Position
 	end)
 	Self.Utilities.MakeResizeable(KeybindInstance.Resize, KeybindInstance, Vector2.new(121, 246), Vector2.new(896, 896), function(Size)
+		if not Self.Utilities.IsWindowsVisible(Self) then return end
 		KeybindList.Size = Size
 	end)
 
@@ -4371,37 +4391,36 @@ function Bracket.KeybindList(Self, KeybindList)
 		KeybindInstance.Size = Size
 	end)
 
-	-- Self.Instance.Background.Changed:Connect(function(Property)
-	-- 	if Property == "Image" then
-	-- 		KeybindInstance.Background.Image = Self.Instance.Background.Image
-	-- 	elseif Property == "ImageColor3" then
-	-- 		KeybindInstance.Background.ImageColor3 = Self.Instance.Background.ImageColor3
-	-- 	elseif Property == "ImageTransparency" then
-	-- 		KeybindInstance.Background.ImageTransparency = Self.Instance.Background.ImageTransparency
-	-- 	elseif Property == "TileSize" then
-	-- 		KeybindInstance.Background.TileSize = Self.Instance.Background.TileSize
-	-- 	end
-	-- end)
+	task.spawn(function()
+		if not KeybindList.Window then
+			local Retries = 0
+
+			while not KeybindList.Window do
+				KeybindList.Window = Self.Utilities.FindLastElementWithType(Self, "Window")
+				if Retries > 9 then
+					Bracket:ToastNotification({Title = "Cant Attach KeybindList to any Window", Duration = 5, Color = Color3.new(1, 0, 0)})
+				end
+				Retries += 1
+				task.wait(1)
+			end
+		end
+
+		KeybindList.Window.Background.Changed:Connect(function(Property)
+			if Property == "Image" then
+				KeybindInstance.Background.Image = KeybindList.Window.Background.Image
+			elseif Property == "ImageColor3" then
+				KeybindInstance.Background.ImageColor3 = KeybindList.Window.Background.ImageColor3
+			elseif Property == "ImageTransparency" then
+				KeybindInstance.Background.ImageTransparency = KeybindList.Window.Background.ImageTransparency
+			elseif Property == "TileSize" then
+				KeybindInstance.Background.TileSize = KeybindList.Window.Background.TileSize
+			end
+		end)
+	end)
 
 	for Index, Element in pairs(Self.Elements) do
-		if Element.Type == "Keybind" and not Element.IgnoreList then
-			Element.ListMimic = {}
-			Element.ListMimic.Instance = Self.Instances.KeybindMimic()
-			Element.ListMimic.Instance.Title.Text = Element.CustomName or Element.Name or Element.Toggle.Name
-			Element.ListMimic.Instance.Visible = Element.Value ~= "NONE"
-			Element.ListMimic.Instance.Layout.Keybind.Text = `[ {Element.Value} ]`
-			Element.ListMimic.Instance.Parent = KeybindList.List
-
-			Element.ListMimic.Instance.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-				Element.ListMimic.Instance.Title.Size = UDim2.new(1, -(Element.ListMimic.Instance.Layout.ListLayout.AbsoluteContentSize.X + 18), 1, 0)
-			end)
-
-			Element.ListMimic.Instance.Layout.Keybind:GetPropertyChangedSignal("TextBounds"):Connect(function()
-				Element.ListMimic.Instance.Layout.Keybind.Size = UDim2.new(0, Element.ListMimic.Instance.Layout.Keybind.TextBounds.X, 1, 0)
-			end)
-
-			Element.ListMimic.ColorConfig = {Element.ListMimic.Instance.Tick, "BackgroundColor3", false}
-			Element.Window.Colorable[#Element.Window.Colorable + 1] = Element.ListMimic.ColorConfig
+		if Element.Type == "Keybind" and not Element.IgnoreList and not Element.Mimic then
+			Bracket.Templates.KeybindMimic(Element, Bracket.KeybindList)
 		end
 	end
 
@@ -4419,7 +4438,7 @@ function Bracket.SetValue(Self, Flag, Value)
 	if Element then Element.Value = Value end
 end
 
-function Bracket.SaveConfig(Self, FolderName, Name)
+function Bracket.FormatConfig(Self)
 	local Config = {}
 
 	for Index, Element in pairs(Self.Elements) do
@@ -4438,17 +4457,30 @@ function Bracket.SaveConfig(Self, FolderName, Name)
 		end
 	end
 
-	writefile(`{FolderName}\\Configs\\{Name}.json`, HttpService:JSONEncode(Config))
+	return Config
+end
+function Bracket.SaveConfig(Self, FolderName, Name)
+	local Config = Self:FormatConfig()
+	Config = HttpService:JSONEncode(Config)
+	writefile(`{FolderName}\\Configs\\{Name}.json`, Config)
 end
 function Bracket.LoadConfig(Self, FolderName, Name)
 	if table.find(Self.Utilities.GetConfigs(FolderName), Name) then
 		local Data = readfile(`{FolderName}\\Configs\\{Name}.json`)
 		local DecodedJSON = HttpService:JSONDecode(Data)
 
-		for Flag, Value in pairs(DecodedJSON) do
-			local Element = Self.Utilities.FindElementByFlag(Self.Elements, Flag)
-			if Element ~= nil then Element.Value = Value end
+		for Index, Element in Self.Elements do
+			if Element.Flag and not Element.IgnoreFlag then
+				local Value = DecodedJSON[Element.Flag]
+				Element.Value = Value or Element.Default
+			end
 		end
+		--[[for Flag, Value in pairs(DecodedJSON) do
+			local Element = Self.Utilities.FindElementByFlag(Self, Flag)
+			if Element ~= nil then
+				Element.Value = Value
+			end
+		end]]
 	end
 end
 function Bracket.DeleteConfig(Self, FolderName, Name)
@@ -4505,7 +4537,7 @@ function Bracket.AutoloadConfig(Self, FolderName)
 	end
 end
 
-function Bracket.Push(Self, Notification)
+function Bracket.PushNotification(Self, Notification)
 	Notification = Self.Utilities:GetType(Notification, "table", {})
 	Notification.Title = Self.Utilities:GetType(Notification.Title, "string", "Title")
 	Notification.Description = Self.Utilities:GetType(Notification.Description, "string", "Description")
@@ -4543,7 +4575,7 @@ function Bracket.Push(Self, Notification)
 	end
 end
 
-function Bracket.Toast(Self, Notification)
+function Bracket.ToastNotification(Self, Notification)
 	Notification = Self.Utilities:GetType(Notification, "table", {})
 	Notification.Title = Self.Utilities:GetType(Notification.Title, "string", "Title")
 	Notification.Duration = Self.Utilities:GetType(Notification.Duration, "number", 5)
@@ -4579,6 +4611,13 @@ function Bracket.Toast(Self, Notification)
 end
 
 if Bracket.IsLocal then
+	local virtualWorkspace = {
+		--["Testing Config System"] = "[]",
+		--["Yeah I know it's dumb"] = "[]",
+		--["But what You gonna do about this?"] = "[]",
+		--["Oh also you can't use special characters in file names LOL"] = "[]",
+	}
+
 	function isfolder(path)
 		print("Folder check", path)
 		return true
@@ -4588,26 +4627,30 @@ if Bracket.IsLocal then
 	end
 	function isfile(path)
 		print("File check", path)
-		return true
+		return virtualWorkspace[path]
 	end
 	function listfiles(path)
 		print("Listing files", path)
-		return {
-			"Testing Config System",
-			"Yeah I know it's dumb",
-			"But what You gonna do about this?",
-			"Oh also you can't use special characters in file names LOL"
-		}
+		local files = {}
+
+		for i,v in virtualWorkspace do
+			--if type(v) == "table" then continue end
+			files[#files + 1] = i
+		end
+
+		return files
 	end
 	function writefile(path, data)
+		virtualWorkspace[path] = data
 		print("Writing file", path, data)
 	end
 	function readfile(path)
 		print("Reading file", path)
-		return "[]"
+		return virtualWorkspace[path]
 	end
 	function delfile(path)
 		print("Deleting file", path)
+		virtualWorkspace[path] = nil
 	end
 	function sethiddenproperty(object, prop, value)
 		print("Setting property", object, prop, value)
