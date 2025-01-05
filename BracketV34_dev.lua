@@ -330,6 +330,7 @@ Bracket.Utilities = {
 
 		local Configs = {}
 		for Index, Config in pairs(listfiles(`{FolderName}\\Configs`) or {}) do
+			Config = Config:gsub(`/`, "\\")
 			Config = Config:gsub(`{FolderName}\\Configs\\`, "")
 			Config = Config:gsub(".json", "")
 
@@ -348,6 +349,7 @@ Bracket.Utilities = {
 
 		local Configs = {}
 		for Index, Config in pairs(listfiles(`{FolderName}\\Configs`) or {}) do
+			Config = Config:gsub(`/`, "\\")
 			Config = Config:gsub(`{FolderName}\\Configs\\`, "")
 			Config = Config:gsub(".json", "")
 
@@ -4430,11 +4432,11 @@ function Bracket.KeybindList(Self, KeybindList)
 end
 
 function Bracket.GetValue(Self, Flag)
-	local Element = Self.Utilities.FindElementByFlag(Self)
+	local Element = Self.Utilities.FindElementByFlag(Self, Flag)
 	if Element then return Element.Value end
 end
 function Bracket.SetValue(Self, Flag, Value)
-	local Element = Self.Utilities.FindElementByFlag(Self)
+	local Element = Self.Utilities.FindElementByFlag(Self, Flag)
 	if Element then Element.Value = Value end
 end
 
